@@ -32,7 +32,7 @@ func (rep *ContainerRepository) Shell() (net.Conn, error) {
 	return rep.Exec(ctx, name, []string{"/bin/sh"})
 }
 
-// 10分以上残ってるゲーム用コンテナをストップして、削除する。　
+// 10分以上残ってるゲーム用コンテナをストップして、削除する。
 func (rep *ContainerRepository) CleanUp() error {
 	panic("implement me")
 }
