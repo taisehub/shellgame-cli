@@ -5,6 +5,7 @@ import (
 	"github.com/docker/docker/api/types"
 	"github.com/docker/docker/api/types/container"
 	"github.com/docker/docker/client"
+	"github.com/taise-hub/shellgame-cli/interfaces"
 	"log"
 	"net"
 	"time"
@@ -30,25 +31,25 @@ var (
 		AttachStdout: true,
 		AttachStderr: true,
 		Tty:          true,
-		Cmd:          []string{"/bin/sh"},
+		Cmd:          []string{},
 	}
 )
 
-type ContainerHandler struct {
+type containerHandler struct {
 	client *client.Client
 }
 
-func NewContainerHandler() (*ContainerHandler, error) {
+func NewContainerHandler() (interfaces.ContainerHandler, error) {
 	cli, err := client.NewClientWithOpts(client.FromEnv)
 	if err != nil {
 		return nil, err
 	}
-	h := new(ContainerHandler)
+	h := new(containerHandler)
 	h.client = cli
 	return h, nil
 }
 
-func (h *ContainerHandler) Create(ctx context.Context, containerName string) (string, error) {
+func (h *containerHandler) Create(ctx context.Context, containerName string) (string, error) {
 	createdBody, err := h.client.ContainerCreate(ctx, conf, hconf, nil, nil, containerName)
 	if err != nil {
 		return "", err
@@ -61,11 +62,12 @@ func (h *ContainerHandler) Create(ctx context.Context, containerName string) (st
 	return createdBody.ID, nil
 }
 
-func (h *ContainerHandler) Start(ctx context.Context, containerID string) error {
+func (h *containerHandler) Start(ctx context.Context, containerID string) error {
 	return h.client.ContainerStart(ctx, containerID, types.ContainerStartOptions{})
 }
 
-func (h *ContainerHandler) RunShell(ctx context.Context, containerName string) (net.Conn, error) {
+func (h *containerHandler) Exec(ctx context.Context, containerName string, cmd []string) (net.Conn, error) {
+	econf.Cmd = cmd
 	iresp, err := h.client.ContainerExecCreate(ctx, containerName, econf)
 	if err != nil {
 		return nil, err
@@ -77,12 +79,12 @@ func (h *ContainerHandler) RunShell(ctx context.Context, containerName string) (
 	return hresp.Conn, nil
 }
 
-func (h *ContainerHandler) Stop(ctx context.Context, containerID string) error {
+func (h *containerHandler) Stop(ctx context.Context, containerID string) error {
 	timeout := time.Duration(3 * time.Second)
 	return h.client.ContainerStop(ctx, containerID, &timeout)
 }
 
-func (h *ContainerHandler) Remove(ctx context.Context, containerID string) error {
+func (h *containerHandler) Remove(ctx context.Context, containerID string) error {
 	opt := types.ContainerRemoveOptions{RemoveVolumes: true, RemoveLinks: true, Force: false}
 	return h.client.ContainerRemove(ctx, containerID, opt)
 }
