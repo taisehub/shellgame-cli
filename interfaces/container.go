@@ -2,9 +2,8 @@ package interfaces
 
 import (
 	"context"
-	"math/rand"
 	"net"
-	"strconv"
+	"github.com/google/uuid"
 	"github.com/taise-hub/shellgame-cli/domain/repository"
 )
 
@@ -26,15 +25,18 @@ func NewContainerRepository(ch ContainerHandler) repository.ConsoleRepository {
 
 func (rep *ContainerRepository) StartShell() (net.Conn, error) {
 	ctx := context.Background()
-	name := strconv.Itoa(rand.Int())
-	id, err := rep.Create(ctx, name)
+	name, err := uuid.NewRandom()
+	if err != nil {
+		return nil, err
+	}
+	id, err := rep.Create(ctx, name.String())
 	if err != nil {
 		return nil, err
 	}
 	if err = rep.Start(ctx, id); err != nil {
 		return nil, err
 	}
-	return rep.Exec(ctx, name, []string{"/bin/sh"})
+	return rep.Exec(ctx, name.String(), []string{"/bin/sh"})
 }
 
 // 10分以上残ってるゲーム用コンテナをストップして、削除する。
