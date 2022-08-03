@@ -4,6 +4,7 @@ import (
 	"fmt"
 	"github.com/gorilla/websocket"
 	"net/http"
+	"github.com/taise-hub/shellgame-cli/usecase"
 )
 
 var (
@@ -14,10 +15,13 @@ var (
 )
 
 type GameController struct {
+	usecase *usecase.GameUsecase
 }
 
 func NewGameController() *GameController {
-	return &GameController{}
+	return &GameController{
+		usecase: usecase.NewGameUsecase(),
+	}
 }
 
 func (con *GameController) Hello(w http.ResponseWriter, req *http.Request) {
