@@ -3,8 +3,8 @@ package interfaces
 import (
 	"fmt"
 	"github.com/gorilla/websocket"
-	"net/http"
 	"github.com/taise-hub/shellgame-cli/usecase"
+	"net/http"
 )
 
 var (
