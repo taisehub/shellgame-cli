@@ -23,5 +23,5 @@ func main() {
 	mux.HandleFunc("/ws", gameController.HandleWebsocket)
 
 	log.Println("[+] Start listening.")
-	http.ListenAndServe(":", mux)
+	http.ListenAndServe(":80", mux)
 }
