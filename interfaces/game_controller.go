@@ -29,9 +29,12 @@ func (con *GameController) Hello(w http.ResponseWriter, req *http.Request) {
 }
 
 func (con *GameController) HandleWebsocket(w http.ResponseWriter, req *http.Request) {
-	_, err := upgrader.Upgrade(w, req, nil)
+	conn, err := upgrader.Upgrade(w, req, nil)
+	defer conn.Close()
 	if err != nil {
 		http.Error(w, http.StatusText(http.StatusInternalServerError), http.StatusInternalServerError)
 	}
-	con.usecase.Start()
+	if err = con.usecase.Start(conn.UnderlyingConn()); err != nil {
+		fmt.Fprintf(w, "error")
+	}
 }

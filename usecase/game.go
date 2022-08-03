@@ -2,10 +2,13 @@ package usecase
 
 import (
 	"github.com/taise-hub/shellgame-cli/domain/repository"
+	"io"
+	"log"
+	"net"
 )
 
 type GameUsecase interface {
-	Start() error
+	Start(net.Conn) error
 	Matching() error
 }
 
@@ -19,9 +22,18 @@ func NewGameInteractor(consoleRepo repository.ConsoleRepository) GameUsecase {
 	}
 }
 
-// マッチング完了後、バトルを開始するためのメソッド
-func (gc *gameInteractor) Start() error {
-	panic("implement me")
+// ゲーム開始時に利用します。
+// クラアインとから受け取ったWebsocketをdocker.sockに繋げます。
+func (gc *gameInteractor) Start(nconn net.Conn) (err error) {
+	cconn, err := gc.consoleRepo.StartShell()
+	if err != nil {
+		log.Printf("Error in StartShell(): %v\n", err)
+		return err
+	}
+	defer cconn.Close()
+	go func() { _, _ = io.Copy(nconn, cconn) }()
+	io.Copy(cconn, nconn)
+	return
 }
 
 // ゲームのマッチングをするためのメソッド
