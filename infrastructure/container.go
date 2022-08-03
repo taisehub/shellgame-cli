@@ -12,7 +12,7 @@ import (
 )
 
 const (
-	IMAGE_NAME = "alphine"
+	IMAGE_NAME = "alpine"
 )
 
 var (
