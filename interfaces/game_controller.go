@@ -15,12 +15,12 @@ var (
 )
 
 type GameController struct {
-	usecase *usecase.GameUsecase
+	usecase usecase.GameUsecase
 }
 
-func NewGameController() *GameController {
+func NewGameController(usecase usecase.GameUsecase) *GameController {
 	return &GameController{
-		usecase: usecase.NewGameUsecase(),
+		usecase: usecase,
 	}
 }
 
@@ -33,4 +33,5 @@ func (con *GameController) HandleWebsocket(w http.ResponseWriter, req *http.Requ
 	if err != nil {
 		http.Error(w, http.StatusText(http.StatusInternalServerError), http.StatusInternalServerError)
 	}
+	con.usecase.Start()
 }
