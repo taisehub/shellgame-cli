@@ -10,12 +10,12 @@ type GameUsecase interface {
 }
 
 type gameInteractor struct {
-	shellRepo repository.ConsoleRepository
+	consoleRepo repository.ConsoleRepository
 }
 
-func NewGameInteractor(shellRepo repository.ConsoleRepository) GameUsecase {
+func NewGameInteractor(consoleRepo repository.ConsoleRepository) GameUsecase {
 	return &gameInteractor{
-		shellRepo: shellRepo,
+		consoleRepo: consoleRepo,
 	}
 }
 
