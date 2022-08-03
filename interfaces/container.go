@@ -5,6 +5,7 @@ import (
 	"math/rand"
 	"net"
 	"strconv"
+	"github.com/taise-hub/shellgame-cli/domain/repository"
 )
 
 type ContainerHandler interface {
@@ -19,7 +20,11 @@ type ContainerRepository struct {
 	ContainerHandler
 }
 
-func (rep *ContainerRepository) Shell() (net.Conn, error) {
+func NewContainerRepository(ch ContainerHandler) repository.ConsoleRepository {
+	return &ContainerRepository { ch }
+}
+
+func (rep *ContainerRepository) StartShell() (net.Conn, error) {
 	ctx := context.Background()
 	name := strconv.Itoa(rand.Int())
 	id, err := rep.Create(ctx, name)
