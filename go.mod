@@ -2,7 +2,10 @@ module github.com/taise-hub/shellgame-cli
 
 go 1.18
 
-require github.com/docker/docker v20.10.17+incompatible
+require (
+	github.com/docker/docker v20.10.17+incompatible
+	github.com/gorilla/websocket v1.5.0
+)
 
 require (
 	github.com/Microsoft/go-winio v0.5.2 // indirect
