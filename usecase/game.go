@@ -1,7 +1,9 @@
 package usecase
 
 import (
+	"github.com/taise-hub/shellgame-cli/domain/model"
 	"github.com/taise-hub/shellgame-cli/domain/repository"
+	"github.com/taise-hub/shellgame-cli/domain/service"
 	"io"
 	"log"
 	"net"
@@ -9,21 +11,23 @@ import (
 
 type GameUsecase interface {
 	Start(net.Conn) error
-	Matching() error
+	WaitMatch(*model.Player) error
 }
 
 type gameInteractor struct {
-	consoleRepo repository.ConsoleRepository
+	consoleRepo  repository.ConsoleRepository
+	matchService service.MatchService
 }
 
-func NewGameInteractor(consoleRepo repository.ConsoleRepository) GameUsecase {
+func NewGameInteractor(consoleRepo repository.ConsoleRepository, matchService service.MatchService) GameUsecase {
 	return &gameInteractor{
-		consoleRepo: consoleRepo,
+		consoleRepo:  consoleRepo,
+		matchService: matchService,
 	}
 }
 
-// ゲーム開始時に利用します。
-// クラアインとから受け取ったWebsocketをdocker.sockに繋げます。
+// ゲーム開始時に利用する。
+// クラアインとから受け取ったWebsocketをコンソールの入出力先であるsocketに接続する。
 func (gi *gameInteractor) Start(nconn net.Conn) (err error) {
 	cconn, err := gi.consoleRepo.StartShell()
 	if err != nil {
@@ -36,8 +40,11 @@ func (gi *gameInteractor) Start(nconn net.Conn) (err error) {
 	return
 }
 
-// ゲームのマッチングをするためのメソッド
-// 詳細まで考えれていないので、最終的にはもう少し細かく分かれる
-func (gi *gameInteractor) Matching() error {
+// playerをマッチング待ち状態にする。
+func (gi *gameInteractor) WaitMatch(player *model.Player) error {
+	if err := gi.matchService.Wait(player); err != nil {
+		return err
+	}
+	//TODO: マッチングルーム用のchanelに追加するの処理の実装
 	panic("implement me")
 }
