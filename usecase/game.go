@@ -24,8 +24,8 @@ func NewGameInteractor(consoleRepo repository.ConsoleRepository) GameUsecase {
 
 // ゲーム開始時に利用します。
 // クラアインとから受け取ったWebsocketをdocker.sockに繋げます。
-func (gc *gameInteractor) Start(nconn net.Conn) (err error) {
-	cconn, err := gc.consoleRepo.StartShell()
+func (gi *gameInteractor) Start(nconn net.Conn) (err error) {
+	cconn, err := gi.consoleRepo.StartShell()
 	if err != nil {
 		log.Printf("Error in StartShell(): %v\n", err)
 		return err
@@ -38,6 +38,6 @@ func (gc *gameInteractor) Start(nconn net.Conn) (err error) {
 
 // ゲームのマッチングをするためのメソッド
 // 詳細まで考えれていないので、最終的にはもう少し細かく分かれる
-func (gu *gameInteractor) Matching() error {
+func (gi *gameInteractor) Matching() error {
 	panic("implement me")
 }
