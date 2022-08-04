@@ -1,4 +1,4 @@
-package interfaces
+package redis
 
 
 //TODO: /domain/repositoryに移動
