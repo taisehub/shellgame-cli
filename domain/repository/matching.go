@@ -1,6 +1,7 @@
 package repository
 
+// 対戦待ちのプレイヤーに関する操作を行うRepository
 type MatchingRepository interface {
 	GetAll() ([]string, error)
-	SetID(string, uint32) error
+	SetID(uint32) error
 }

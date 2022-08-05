@@ -20,9 +20,9 @@ func (rep *matchingRepository) GetAll() ([]string, error) {
 	return rep.ListGet(ctx, "players")
 }
 
-func (rep *matchingRepository) SetID(key string, id uint32) error {
+func (rep *matchingRepository) SetID(id uint32) error {
 	ctx, cancel := context.WithCancel(context.Background())
 	defer cancel()
 	v := strconv.FormatUint(uint64(id), 10)
-	return rep.ListSet(ctx, key, []string{v})
+	return rep.ListSet(ctx, "players", []string{v})
 }
