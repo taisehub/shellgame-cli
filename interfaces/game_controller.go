@@ -24,11 +24,7 @@ func NewGameController(usecase usecase.GameUsecase) *GameController {
 	}
 }
 
-func (con *GameController) Hello(w http.ResponseWriter, req *http.Request) {
-	fmt.Fprintf(w, "hello, %v\n", req.FormValue("name"))
-}
-
-func (con *GameController) HandleWebsocket(w http.ResponseWriter, req *http.Request) {
+func (con *GameController) Start(w http.ResponseWriter, req *http.Request) {
 	conn, err := upgrader.Upgrade(w, req, nil)
 	defer conn.Close()
 	if err != nil {
