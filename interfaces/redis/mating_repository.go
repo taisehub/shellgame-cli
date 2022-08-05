@@ -10,7 +10,7 @@ type matchingRepository struct {
 	RedisHandler
 }
 
-func NewmatchingRepository(rh RedisHandler) repository.MatchingRepository {
+func NewMatchingRepository(rh RedisHandler) repository.MatchingRepository {
 	return &matchingRepository{rh}
 }
 
