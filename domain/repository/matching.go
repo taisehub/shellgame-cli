@@ -1,6 +1,6 @@
 package repository
 
-type PlayerRepository interface {
+type MatchingRepository interface {
 	GetAll() ([]string, error)
 	SetID(string, uint32) error
 }

@@ -6,21 +6,21 @@ import (
 	"strconv"
 )
 
-type playerRepository struct {
+type matchingRepository struct {
 	RedisHandler
 }
 
-func NewRedisRepository(rh RedisHandler) repository.PlayerRepository {
-	return &playerRepository{rh}
+func NewmatchingRepository(rh RedisHandler) repository.MatchingRepository {
+	return &matchingRepository{rh}
 }
 
-func (rep *playerRepository) GetAll() ([]string, error) {
+func (rep *matchingRepository) GetAll() ([]string, error) {
 	ctx, cancel := context.WithCancel(context.Background())
 	defer cancel()
 	return rep.ListGet(ctx, "players")
 }
 
-func (rep *playerRepository) SetID(key string, id uint32) error {
+func (rep *matchingRepository) SetID(key string, id uint32) error {
 	ctx, cancel := context.WithCancel(context.Background())
 	defer cancel()
 	v := strconv.FormatUint(uint64(id), 10)
