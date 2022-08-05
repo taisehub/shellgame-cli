@@ -18,8 +18,8 @@ func main() {
 	}
 	consoleRepo := interfaces.NewContainerRepository(containerHandler)
 	redisHandler := infrastructure.NewRedisHandler()
-	matchingRepo := redis.NewMatchingRepository(redisHandler)
-	matchService := service.NewMatchService(matchingRepo)
+	matchingRoomRepo := redis.NewMatchingRoomRepository(redisHandler)
+	matchService := service.NewMatchService(matchingRoomRepo)
 	gameUsecase := usecase.NewGameInteractor(consoleRepo, matchService)
 	gameController := interfaces.NewGameController(gameUsecase)
 

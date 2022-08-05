@@ -6,16 +6,16 @@ import (
 )
 
 type MatchService struct {
-	matchRepo repository.MatchingRepository
+	matchRoomRepo repository.MatchingRoomRepository
 }
 
-func NewMatchService(matchRepo repository.MatchingRepository) *MatchService {
-	return &MatchService{matchRepo: matchRepo}
+func NewMatchService(matchRoomRepo repository.MatchingRoomRepository) *MatchService {
+	return &MatchService{matchRoomRepo: matchRoomRepo}
 }
 
 // playerをマッチング待ち状態として保存する
 func (srv *MatchService) Wait(player *model.Player) error {
-	if err := srv.matchRepo.SetID(player.GetID()); err != nil {
+	if err := srv.matchRoomRepo.SetID(player.GetID()); err != nil {
 		return err
 	}
 	return nil
