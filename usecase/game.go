@@ -16,10 +16,10 @@ type GameUsecase interface {
 
 type gameInteractor struct {
 	consoleRepo  repository.ConsoleRepository
-	matchService service.MatchService
+	matchService *service.MatchService
 }
 
-func NewGameInteractor(consoleRepo repository.ConsoleRepository, matchService service.MatchService) GameUsecase {
+func NewGameInteractor(consoleRepo repository.ConsoleRepository, matchService *service.MatchService) GameUsecase {
 	return &gameInteractor{
 		consoleRepo:  consoleRepo,
 		matchService: matchService,
