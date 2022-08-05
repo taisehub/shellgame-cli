@@ -11,3 +11,7 @@ func NewProfile(id uint32, name string) *Profile {
 		name: name,
 	}
 }
+
+func (p *Profile) GetID() uint32 {
+	return p.id
+}

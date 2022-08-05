@@ -11,3 +11,7 @@ func NewPlayer(profile Profile) *Player {
 		state:   INACTIVE,
 	}
 }
+
+func (p *Player) GetID() uint32 {
+	return p.profile.GetID()
+}
