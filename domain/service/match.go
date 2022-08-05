@@ -9,6 +9,10 @@ type MatchService struct {
 	matchRepo repository.MatchingRepository
 }
 
+func NewMatchService(matchRepo repository.MatchingRepository) *MatchService {
+	return &MatchService{matchRepo: matchRepo}
+}
+
 // playerをマッチング待ち状態として保存する
 func (srv *MatchService) Wait(player *model.Player) error {
 	if err := srv.matchRepo.SetID(player.GetID()); err != nil {
