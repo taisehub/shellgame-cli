@@ -44,7 +44,6 @@ func (gi *gameInteractor) Start(nconn net.Conn) (err error) {
 func (gi *gameInteractor) WaitMatch(player *model.MatchingPlayer) {
 	mroom := model.GetMatchingRoom()
 	mroom.GetRegisterChan() <- player
-	//TODO: context.Contextを渡して5分でタイムアウトするような実装する
 	go player.ReadPump()
 	go player.WritePump()
 }

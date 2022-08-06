@@ -1,5 +1,10 @@
 package model
 
+import (
+	"time"
+	"context"
+)
+
 type Player interface {
 	GetProfile() *Profile
 }
@@ -19,12 +24,10 @@ func NewMatchingPlayer(profile *Profile) *MatchingPlayer {
 	}
 }
 
-// FIXME: IDではなくProfileを返すようにする
 func (p *MatchingPlayer) GetProfile() *Profile {
 	return p.profile
 }
 
-// TODO: context対応
 func (p *MatchingPlayer) ReadPump() {
 	defer func() {
 		p.conn.Close()
@@ -39,16 +42,23 @@ func (p *MatchingPlayer) ReadPump() {
 	}
 }
 
-// TODO: context対応
 func (p *MatchingPlayer) WritePump() {
-	defer p.conn.Close()
+	ctx, cancel := context.WithTimeout(context.Background(), 5 * time.Minute)
+	defer func() {
+		cancel()
+		p.conn.Close()
+	}()
 	for {
-		msg, ok := <-p.matchingChan
-		if !ok {
+		select {
+		case <-ctx.Done():
 			return
-		}
-		if err := p.conn.Write(msg); err != nil {
-			return
+		case msg, ok := <-p.matchingChan:
+			if !ok {
+				return
+			}
+			if err := p.conn.Write(msg); err != nil {
+				return
+			}
 		}
 	}
 }
