@@ -40,5 +40,8 @@ func (wc *WebsocketConn) Read(msg model.Message) error {
 }
 
 func (wc *WebsocketConn) Write(msg model.Message) error {
+	defer wc.Unlock()
+	wc.Lock()
+	wc.SetWriteDeadline(time.Now().Add(writeWait))
 	return wc.WriteJSON(msg)
 }
