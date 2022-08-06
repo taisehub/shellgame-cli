@@ -30,7 +30,7 @@ func (p *MatchingPlayer) ReadPump() {
 		p.conn.Close()
 		GetMatchingRoom().unregister <- p
 	}()
-	var msg  *MatchingMessage
+	var msg *MatchingMessage
 	for {
 		if err := p.conn.Read(msg); err != nil {
 			return
@@ -43,7 +43,7 @@ func (p *MatchingPlayer) ReadPump() {
 func (p *MatchingPlayer) WritePump() {
 	defer p.conn.Close()
 	for {
-		msg, ok := <- p.matchingChan
+		msg, ok := <-p.matchingChan
 		if !ok {
 			return
 		}

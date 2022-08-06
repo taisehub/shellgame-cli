@@ -2,14 +2,14 @@ package interfaces
 
 import (
 	"github.com/gorilla/websocket"
+	"github.com/taise-hub/shellgame-cli/domain/model"
 	"sync"
 	"time"
-	"github.com/taise-hub/shellgame-cli/domain/model"
 )
 
 const (
-	writeWait = 10 * time.Second
-	readWait  = 10 * time.Second
+	writeWait      = 10 * time.Second
+	readWait       = 10 * time.Second
 	maxMessageSize = 512
 )
 
@@ -27,7 +27,7 @@ func NewWebsocketConn(conn *websocket.Conn) model.Conn {
 func (wc *WebsocketConn) Close() error {
 	defer wc.Unlock()
 	wc.Lock()
-	wc.WriteMessage(websocket.CloseMessage, []byte{}) 
+	wc.WriteMessage(websocket.CloseMessage, []byte{})
 	return wc.Close()
 }
 

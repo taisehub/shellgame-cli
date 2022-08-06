@@ -1,12 +1,12 @@
 package main
 
 import (
+	"github.com/taise-hub/shellgame-cli/domain/model"
+	"github.com/taise-hub/shellgame-cli/domain/service"
 	"github.com/taise-hub/shellgame-cli/infrastructure"
 	"github.com/taise-hub/shellgame-cli/interfaces"
 	"github.com/taise-hub/shellgame-cli/interfaces/redis"
 	"github.com/taise-hub/shellgame-cli/usecase"
-	"github.com/taise-hub/shellgame-cli/domain/service"
-	"github.com/taise-hub/shellgame-cli/domain/model"
 	"log"
 	"net/http"
 )

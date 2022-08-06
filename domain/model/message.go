@@ -11,11 +11,11 @@ type MatchingMessage struct {
 	data   *MatchingMessageData
 }
 
-func (mm *MatchingMessage) GetSource() Player{
+func (mm *MatchingMessage) GetSource() Player {
 	return mm.source
 }
 
-func (mm *MatchingMessage) GetDest() Player{
+func (mm *MatchingMessage) GetDest() Player {
 	return mm.dest
 }
 

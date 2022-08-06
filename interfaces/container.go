@@ -2,9 +2,9 @@ package interfaces
 
 import (
 	"context"
-	"net"
 	"github.com/google/uuid"
 	"github.com/taise-hub/shellgame-cli/domain/repository"
+	"net"
 )
 
 type ContainerHandler interface {
@@ -20,7 +20,7 @@ type ContainerRepository struct {
 }
 
 func NewContainerRepository(ch ContainerHandler) repository.ConsoleRepository {
-	return &ContainerRepository { ch }
+	return &ContainerRepository{ch}
 }
 
 func (rep *ContainerRepository) StartShell() (net.Conn, error) {

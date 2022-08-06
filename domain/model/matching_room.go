@@ -22,11 +22,11 @@ func GetMatchingRoom() *MatchingRoom {
 	return matchingRoom
 }
 
-func (mr *MatchingRoom) GetRegisterChan() (chan<- *MatchingPlayer) {
+func (mr *MatchingRoom) GetRegisterChan() chan<- *MatchingPlayer {
 	return mr.register
 }
 
-func (mr *MatchingRoom) GetUnregisterChan() (chan<- *MatchingPlayer) {
+func (mr *MatchingRoom) GetUnregisterChan() chan<- *MatchingPlayer {
 	return mr.unregister
 }
 
@@ -39,7 +39,7 @@ func (mr *MatchingRoom) Run() {
 			if _, ok := mr.MatchingPlayers[matchingPlayer]; ok {
 				//matchingPlayerが到達不可能オブジェクトになるはず(願望)
 				close(matchingPlayer.matchingChan)
-				delete(mr.MatchingPlayers, matchingPlayer) 
+				delete(mr.MatchingPlayers, matchingPlayer)
 			}
 		case message := <-mr.message:
 			message.dest.matchingChan <- message
