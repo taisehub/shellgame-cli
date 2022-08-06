@@ -11,7 +11,7 @@ import (
 
 type GameUsecase interface {
 	Start(net.Conn) error
-	WaitMatch(*model.Player) error
+	WaitMatch(*model.MatchingPlayer)
 }
 
 type gameInteractor struct {
@@ -41,10 +41,10 @@ func (gi *gameInteractor) Start(nconn net.Conn) (err error) {
 }
 
 // playerをマッチング待ち状態にする。
-func (gi *gameInteractor) WaitMatch(player *model.Player) error {
-	if err := gi.matchService.Wait(player); err != nil {
-		return err
-	}
-	//TODO: マッチングルーム用のchanelに追加するの処理の実装
-	panic("implement me")
+func (gi *gameInteractor) WaitMatch(player *model.MatchingPlayer) {
+	mroom := model.GetMatchingRoom()
+	mroom.GetRegisterChan() <- player
+	//TODO: context.Contextを渡して5分でタイムアウトするような実装する
+	go player.ReadPump()
+	go player.WritePump()
 }
