@@ -13,9 +13,10 @@ func NewMatchService(matchRoomRepo repository.MatchingRoomRepository) *MatchServ
 	return &MatchService{matchRoomRepo: matchRoomRepo}
 }
 
-// playerをマッチング待ち状態として保存する
-func (srv *MatchService) Wait(player *model.Player) error {
-	if err := srv.matchRoomRepo.SetID(player.GetID()); err != nil {
+// MatchingPlayerをMatchingRoomに参加させる
+// NOTE: 実装によっては不要になる可能性大
+func (srv *MatchService) Wait(player *model.MatchingPlayer) error {
+	if err := srv.matchRoomRepo.SetID(player.GetProfile().GetID()); err != nil {
 		return err
 	}
 	return nil
