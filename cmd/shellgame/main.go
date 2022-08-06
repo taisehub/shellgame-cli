@@ -6,6 +6,7 @@ import (
 	"github.com/taise-hub/shellgame-cli/interfaces/redis"
 	"github.com/taise-hub/shellgame-cli/usecase"
 	"github.com/taise-hub/shellgame-cli/domain/service"
+	"github.com/taise-hub/shellgame-cli/domain/model"
 	"log"
 	"net/http"
 )
@@ -22,6 +23,8 @@ func main() {
 	matchService := service.NewMatchService(matchingRoomRepo)
 	gameUsecase := usecase.NewGameInteractor(consoleRepo, matchService)
 	gameController := interfaces.NewGameController(gameUsecase)
+
+	go model.GetMatchingRoom().Run()
 
 	mux := http.NewServeMux()
 	mux.HandleFunc("/ws", gameController.Start)
