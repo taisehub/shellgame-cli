@@ -1,7 +1,6 @@
 package interfaces
 
 import (
-	"fmt"
 	"github.com/gorilla/websocket"
 	"github.com/taise-hub/shellgame-cli/usecase"
 	"net/http"
@@ -31,6 +30,6 @@ func (con *GameController) Start(w http.ResponseWriter, req *http.Request) {
 		http.Error(w, http.StatusText(http.StatusInternalServerError), http.StatusInternalServerError)
 	}
 	if err = con.usecase.Start(conn.UnderlyingConn()); err != nil {
-		fmt.Fprintf(w, "error")
+		http.Error(w, http.StatusText(http.StatusInternalServerError), http.StatusInternalServerError)
 	}
 }
