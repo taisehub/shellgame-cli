@@ -18,10 +18,6 @@ type WebsocketConn struct {
 	sync.Mutex
 }
 
-func NewWebsocketConn(conn *websocket.Conn) model.Conn {
-	return &WebsocketConn{conn, sync.Mutex{}}
-}
-
 // コネクションをcloseする前にCloseを通知するメッセージを送信することにする。
 // shellgame-clientの実装によっては不要になる可能性あり。
 func (wc *WebsocketConn) Close() error {
