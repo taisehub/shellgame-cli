@@ -17,7 +17,7 @@ type MatchingPlayer struct {
 }
 
 func NewMatchingPlayer(id uint32, name string, conn Conn) *MatchingPlayer {
-	profile := &Profile{id: id, name: name}
+	profile := &Profile{ID: id, Name: name}
 	return &MatchingPlayer{
 		profile:      profile,
 		state:        INACTIVE,
