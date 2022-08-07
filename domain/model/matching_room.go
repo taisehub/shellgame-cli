@@ -34,6 +34,14 @@ func (mr *MatchingRoom) GetUnregisterChan() chan<- *MatchingPlayer {
 	return mr.unregister
 }
 
+func (mr *MatchingRoom) GetMatchingPlayers() []*MatchingPlayer {
+	var players []*MatchingPlayer
+	for player := range mr.MatchingPlayers {
+		players = append(players, player)
+	}
+	return players
+}
+
 func (mr *MatchingRoom) Run() {
 	for {
 		select {
