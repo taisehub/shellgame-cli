@@ -11,6 +11,7 @@ import (
 
 type GameUsecase interface {
 	Start(net.Conn) error
+	GetMatchingPlayers() []*model.MatchingPlayer
 	WaitMatch(*model.MatchingPlayer)
 }
 
@@ -38,6 +39,11 @@ func (gi *gameInteractor) Start(nconn net.Conn) (err error) {
 	go func() { _, _ = io.Copy(nconn, cconn) }()
 	io.Copy(cconn, nconn)
 	return
+}
+
+func (gi *gameInteractor) GetMatchingPlayers() []*model.MatchingPlayer {
+	mroom := model.GetMatchingRoom()
+	return mroom.GetMatchingPlayers()
 }
 
 // playerをマッチング待ち状態にする。
