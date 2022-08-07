@@ -6,6 +6,7 @@ import (
 	"math/rand"
 	"sync"
 	"github.com/gorilla/sessions"
+	"github.com/gorilla/securecookie"
 	"github.com/gorilla/websocket"
 	"github.com/taise-hub/shellgame-cli/usecase"
 	"github.com/taise-hub/shellgame-cli/domain/model"
@@ -21,7 +22,7 @@ var (
 		ReadBufferSize:  1024,
 		WriteBufferSize: 1024,
 	}
-	store = sessions.NewCookieStore([]byte("test-key"))
+	store = sessions.NewCookieStore(securecookie.GenerateRandomKey(32))
 )
 
 type GameController struct {
