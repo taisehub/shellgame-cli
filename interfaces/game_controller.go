@@ -6,7 +6,6 @@ import (
 	"math/rand"
 	"sync"
 	"github.com/gorilla/sessions"
-	"github.com/gorilla/securecookie"
 	"github.com/gorilla/websocket"
 	"github.com/taise-hub/shellgame-cli/usecase"
 	"github.com/taise-hub/shellgame-cli/domain/model"
@@ -22,7 +21,7 @@ var (
 		ReadBufferSize:  1024,
 		WriteBufferSize: 1024,
 	}
-	store = sessions.NewCookieStore(securecookie.GenerateRandomKey(32))
+	store = sessions.NewCookieStore([]byte("test-key"))
 )
 
 type GameController struct {
@@ -72,7 +71,7 @@ func (con *GameController) saveProfile(w http.ResponseWriter, req *http.Request)
 	// もうちょっとスマートにidを生成をしたい
 	src := rand.NewSource(time.Now().UnixNano())
 	random := rand.New(src)
-  	sess.Values["id"] = random.Uint32
+  	sess.Values["id"] = random.Uint32()
 	// ------------
   	sess.Values["name"] = name
   	if err := store.Save(req, w, sess); err != nil {
