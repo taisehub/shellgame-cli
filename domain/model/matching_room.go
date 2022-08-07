@@ -1,5 +1,9 @@
 package model
 
+import (
+	"log"
+)
+
 var (
 	matchingRoom *MatchingRoom = &MatchingRoom{
 		MatchingPlayers: make(map[*MatchingPlayer]struct{}),
@@ -34,14 +38,17 @@ func (mr *MatchingRoom) Run() {
 	for {
 		select {
 		case matchingPlayer := <-mr.register:
+			log.Printf("[+] %s entered the room.\n", matchingPlayer.profile.name)
 			mr.MatchingPlayers[matchingPlayer] = struct{}{}
 		case matchingPlayer := <-mr.unregister:
+			log.Printf("[+] %s exited the room.\n", matchingPlayer.profile.name)
 			if _, ok := mr.MatchingPlayers[matchingPlayer]; ok {
 				//matchingPlayerが到達不可能オブジェクトになるはず(願望)
 				close(matchingPlayer.matchingChan)
 				delete(mr.MatchingPlayers, matchingPlayer)
 			}
 		case message := <-mr.message:
+			log.Printf("[+] %s send message: %s\n", message.source.profile.name, message.data)
 			message.dest.matchingChan <- message
 		}
 	}
