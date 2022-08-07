@@ -24,7 +24,7 @@ func (wc *WebsocketConn) Close() error {
 	defer wc.Unlock()
 	wc.Lock()
 	wc.WriteMessage(websocket.CloseMessage, []byte{})
-	return wc.Close()
+	return wc.Conn.Close()
 }
 
 func (wc *WebsocketConn) Read(msg model.Message) error {
