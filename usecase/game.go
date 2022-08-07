@@ -27,7 +27,7 @@ func NewGameInteractor(consoleRepo repository.ConsoleRepository, matchService *s
 }
 
 // ゲーム開始時に利用する。
-// クラアインとから受け取ったWebsocketをコンソールの入出力先であるsocketに接続する。
+// クラアインとから受け取ったコネクションをコンソールの入出力先である別のコネクションに接続する。
 func (gi *gameInteractor) Start(nconn net.Conn) (err error) {
 	cconn, err := gi.consoleRepo.StartShell()
 	if err != nil {
