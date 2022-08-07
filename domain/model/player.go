@@ -16,10 +16,12 @@ type MatchingPlayer struct {
 	matchingChan chan *MatchingMessage
 }
 
-func NewMatchingPlayer(profile *Profile) *MatchingPlayer {
+func NewMatchingPlayer(id uint32, name string, conn Conn) *MatchingPlayer {
+	profile := &Profile{id: id, name: name}
 	return &MatchingPlayer{
 		profile:      profile,
 		state:        INACTIVE,
+		conn: conn,
 		matchingChan: make(chan *MatchingMessage),
 	}
 }
