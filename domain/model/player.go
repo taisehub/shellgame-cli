@@ -1,8 +1,8 @@
 package model
 
 import (
-	"time"
 	"context"
+	"time"
 )
 
 type Player interface {
@@ -11,7 +11,7 @@ type Player interface {
 
 type MatchingPlayer struct {
 	profile      *Profile
-	state        State
+	state        MatchingState
 	conn         Conn
 	matchingChan chan *MatchingMessage
 }
@@ -20,8 +20,8 @@ func NewMatchingPlayer(id uint32, name string, conn Conn) *MatchingPlayer {
 	profile := &Profile{ID: id, Name: name}
 	return &MatchingPlayer{
 		profile:      profile,
-		state:        INACTIVE,
-		conn: conn,
+		state:        WAITING,
+		conn:         conn,
 		matchingChan: make(chan *MatchingMessage),
 	}
 }
@@ -45,7 +45,7 @@ func (p *MatchingPlayer) ReadPump() {
 }
 
 func (p *MatchingPlayer) WritePump() {
-	ctx, cancel := context.WithTimeout(context.Background(), 5 * time.Minute)
+	ctx, cancel := context.WithTimeout(context.Background(), 5*time.Minute) //WARN: contextここで生成いいかな？
 	defer func() {
 		cancel()
 		p.conn.Close()
