@@ -1,6 +1,8 @@
 package usecase
 
 import (
+	"context"
+	"time"
 	"github.com/taise-hub/shellgame-cli/domain/model"
 	"github.com/taise-hub/shellgame-cli/domain/repository"
 	"github.com/taise-hub/shellgame-cli/domain/service"
@@ -51,5 +53,9 @@ func (gi *gameInteractor) WaitMatch(player *model.MatchingPlayer) {
 	mroom := model.GetMatchingRoom()
 	mroom.GetRegisterChan() <- player
 	go player.ReadPump()
-	go player.WritePump()
+	go func() {
+		ctx, cancel := context.WithTimeout(context.Background(), 5*time.Minute)
+		player.WritePump(ctx)
+		cancel()
+	}()
 }

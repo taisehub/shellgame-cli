@@ -2,7 +2,6 @@ package model
 
 import (
 	"context"
-	"time"
 )
 
 type Player interface {
@@ -44,12 +43,8 @@ func (p *MatchingPlayer) ReadPump() {
 	}
 }
 
-func (p *MatchingPlayer) WritePump() {
-	ctx, cancel := context.WithTimeout(context.Background(), 5*time.Minute) //WARN: contextここで生成いいかな？
-	defer func() {
-		cancel()
-		p.conn.Close()
-	}()
+func (p *MatchingPlayer) WritePump(ctx context.Context) {
+	defer p.conn.Close()
 	for {
 		select {
 		case <-ctx.Done():
