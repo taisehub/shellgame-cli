@@ -1,24 +1,20 @@
 package model
 
 type Message interface {
-	GetSource() Player
-	GetDest() Player
 }
 
 type MatchingMessage struct {
-	source *MatchingPlayer
-	dest   *MatchingPlayer
-	data   *MatchingMessageData
+	Source uint32              `json:"source"`
+	Dest   uint32              `json:"dest"`
+	Data   MatchingMessageData `json:"data"`
 }
 
-func (mm *MatchingMessage) GetSource() Player {
-	return mm.source
-}
+type MatchingMessageData uint8
 
-func (mm *MatchingMessage) GetDest() Player {
-	return mm.dest
-}
-
-// TODO: マッチング時のメッセージのフォーマットの設計
-type MatchingMessageData struct {
-}
+const (
+	OFFER = iota
+	CANCEL_OFFER
+	ACCEPT
+	DENY
+	ERROR
+)

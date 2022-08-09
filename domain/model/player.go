@@ -5,28 +5,32 @@ import (
 )
 
 type Player interface {
-	GetProfile() *Profile
+	GetID() uint32
 }
 
 type MatchingPlayer struct {
-	profile      *Profile
-	state        MatchingState
-	conn         Conn
-	matchingChan chan *MatchingMessage
+	Profile      *Profile              `json:"profile"`
+	Status       MatchingStatus        `json:"status"`
+	conn         Conn                  `json:"-"`
+	matchingChan chan *MatchingMessage `json:"-"`
 }
 
 func NewMatchingPlayer(id uint32, name string, conn Conn) *MatchingPlayer {
 	profile := &Profile{ID: id, Name: name}
 	return &MatchingPlayer{
-		profile:      profile,
-		state:        WAITING,
+		Profile:      profile,
+		Status:       WAITING,
 		conn:         conn,
 		matchingChan: make(chan *MatchingMessage),
 	}
 }
 
-func (p *MatchingPlayer) GetProfile() *Profile {
-	return p.profile
+func (p *MatchingPlayer) GetID() uint32 {
+	return p.Profile.ID
+}
+
+func (p *MatchingPlayer) GetName() string {
+	return p.Profile.Name
 }
 
 func (p *MatchingPlayer) ReadPump() {
