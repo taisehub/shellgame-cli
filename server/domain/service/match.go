@@ -1,8 +1,8 @@
 package service
 
 import (
-	"github.com/taise-hub/shellgame-cli/domain/model"
-	"github.com/taise-hub/shellgame-cli/domain/repository"
+	"github.com/taise-hub/shellgame-cli/server/domain/model"
+	"github.com/taise-hub/shellgame-cli/server/domain/repository"
 )
 
 type MatchService struct {

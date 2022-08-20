@@ -5,7 +5,7 @@ import (
 	"github.com/docker/docker/api/types"
 	"github.com/docker/docker/api/types/container"
 	"github.com/docker/docker/client"
-	"github.com/taise-hub/shellgame-cli/interfaces"
+	"github.com/taise-hub/shellgame-cli/server/interfaces"
 	"log"
 	"net"
 	"time"

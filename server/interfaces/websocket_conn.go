@@ -2,7 +2,7 @@ package interfaces
 
 import (
 	"github.com/gorilla/websocket"
-	"github.com/taise-hub/shellgame-cli/domain/model"
+	"github.com/taise-hub/shellgame-cli/server/domain/model"
 	"sync"
 	"time"
 )

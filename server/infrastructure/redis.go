@@ -3,7 +3,7 @@ package infrastructure
 import (
 	"context"
 	"github.com/go-redis/redis/v8"
-	interfaces "github.com/taise-hub/shellgame-cli/interfaces/redis"
+	interfaces "github.com/taise-hub/shellgame-cli/server/interfaces/redis"
 )
 
 var (

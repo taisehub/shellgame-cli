@@ -3,7 +3,7 @@ package interfaces
 import (
 	"context"
 	"github.com/google/uuid"
-	"github.com/taise-hub/shellgame-cli/domain/repository"
+	"github.com/taise-hub/shellgame-cli/server/domain/repository"
 	"net"
 )
 

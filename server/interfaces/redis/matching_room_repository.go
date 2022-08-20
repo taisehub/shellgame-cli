@@ -2,7 +2,7 @@ package redis
 
 import (
 	"context"
-	"github.com/taise-hub/shellgame-cli/domain/repository"
+	"github.com/taise-hub/shellgame-cli/server/domain/repository"
 	"strconv"
 )
 

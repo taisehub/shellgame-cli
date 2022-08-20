@@ -3,9 +3,9 @@ package usecase
 import (
 	"context"
 	"time"
-	"github.com/taise-hub/shellgame-cli/domain/model"
-	"github.com/taise-hub/shellgame-cli/domain/repository"
-	"github.com/taise-hub/shellgame-cli/domain/service"
+	"github.com/taise-hub/shellgame-cli/server/domain/model"
+	"github.com/taise-hub/shellgame-cli/server/domain/repository"
+	"github.com/taise-hub/shellgame-cli/server/domain/service"
 	"io"
 	"log"
 	"net"
