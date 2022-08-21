@@ -30,7 +30,7 @@ func main() {
 	mux.HandleFunc("/profile", gameController.Profile)
 	mux.HandleFunc("/match", gameController.Match)
 	mux.HandleFunc("/match/wait", gameController.WaitMatch)
-	mux.HandleFunc("/ws", gameController.Start)
+	mux.HandleFunc("/shell", gameController.Start)
 
 	log.Println("[+] Start listening.")
 	http.ListenAndServe(":80", mux)
