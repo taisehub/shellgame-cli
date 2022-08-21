@@ -1,9 +1,9 @@
 package shellgame
 
 import (
-	"os"
-	"io"
 	"golang.org/x/term"
+	"io"
+	"os"
 )
 
 type Terminal struct {
