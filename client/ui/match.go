@@ -1,6 +1,7 @@
 package ui
 
 import (
+	"os/exec"
 	tea "github.com/charmbracelet/bubbletea"
 	shellgame "github.com/taise-hub/shellgame-cli/client"
 	"log"
@@ -9,9 +10,12 @@ import (
 type shellFinishedMsg struct{ err error }
 
 func ExecShell() tea.Cmd {
-	return tea.Exec(&shellgame.Terminal{}, func(err error) tea.Msg {
+	c := exec.Command("clear") // best effort
+	return tea.Batch(tea.ExecProcess(c, func(err error) tea.Msg {
 		return shellFinishedMsg{err}
-	})
+	}),tea.Exec(&shellgame.Terminal{}, func(err error) tea.Msg {
+		return shellFinishedMsg{err}
+	}))
 }
 
 type matchModel struct {
@@ -51,5 +55,5 @@ func (m matchModel) View() string {
 		log.Fatalf("Error:" + m.err.Error() + "\n")
 		return "ERROR\n"
 	}
-	return "implement me"
+	return "aaa"
 }
