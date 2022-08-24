@@ -17,4 +17,6 @@ const (
 	ACCEPT
 	DENY
 	ERROR
+	JOIN
+	LEAVE
 )
