@@ -4,18 +4,10 @@ import (
 	"fmt"
 	"github.com/charmbracelet/bubbles/list"
 	tea "github.com/charmbracelet/bubbletea"
-	"github.com/charmbracelet/lipgloss"
-	"golang.org/x/term"
 	"io"
 )
 
 var (
-	width             = 0
-	defaultWidth      = 140
-	titleStyle        = lipgloss.NewStyle().MarginLeft(2)
-	itemStyle         = lipgloss.NewStyle().PaddingLeft(4)
-	selectedItemStyle = lipgloss.NewStyle().PaddingLeft(2).Foreground(lipgloss.Color("40"))
-
 	title   = "シェルゲー"
 	screens = []list.Item{
 		screen("対戦"),
@@ -23,18 +15,6 @@ var (
 		screen("ヘルプ"),
 	}
 )
-
-// ターミナルの幅を設定
-func init() {
-	var err error
-	width, _, err = term.GetSize(0)
-	if err != nil {
-		width = defaultWidth
-	}
-	titleStyle.Width(width).Align(lipgloss.Left)
-	itemStyle.Width(width).MarginLeft(4).Align(lipgloss.Left)
-	selectedItemStyle.Width(width).MarginLeft(4).Align(lipgloss.Left)
-}
 
 type screen string
 
@@ -59,7 +39,7 @@ func (d itemDelegate) Render(w io.Writer, m list.Model, index int, listItem list
 		return
 	}
 
-	str := fmt.Sprintf(" %s", i)
+	str := fmt.Sprintf("* %s", i)
 
 	fn := itemStyle.Render
 	if index == m.Index() {
@@ -79,7 +59,7 @@ type model struct {
 }
 
 func NewModel() model {
-	l := list.New(screens, itemDelegate{}, width, 10)
+	l := list.New(screens, itemDelegate{}, width, 14)
 	l.Title = title
 	l.Styles.Title = titleStyle
 	l.SetShowStatusBar(false)
@@ -139,6 +119,6 @@ func (m model) View() string {
 	case "ヘルプ":
 		return m.help.View()
 	default:
-		return m.list.View()
+		return "\n" + m.list.View()
 	}
 }
