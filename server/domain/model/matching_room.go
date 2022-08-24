@@ -48,11 +48,29 @@ func (mr *MatchingRoom) Run() {
 		case player := <-mr.register:
 			log.Printf("[+] %s entered the room.\n", player.GetName())
 			mr.Players[player.GetID()] = player
+			for _, p := range mr.Players {
+				var msg = &MatchingMessage{
+					Source: player.GetID(),
+					Dest:   0,
+					Data:   JOIN,
+				}
+				// 参加は全員に送信する
+				p.matchingChan <- msg
+			}
 		case player := <-mr.unregister:
 			log.Printf("[+] %s exited the room.\n", player.GetName())
 			if _, ok := mr.Players[player.GetID()]; ok {
 				close(player.matchingChan)
 				delete(mr.Players, player.GetID())
+			}
+			for _, p := range mr.Players {
+				var msg = &MatchingMessage{
+					Source: player.GetID(),
+					Dest:   0,
+					Data:   LEAVE,
+				}
+				// 退室は全員に送信する
+				p.matchingChan <- msg
 			}
 		case msg := <-mr.message:
 			switch msg.Data {
