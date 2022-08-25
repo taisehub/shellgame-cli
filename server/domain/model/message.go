@@ -4,8 +4,8 @@ type Message interface {
 }
 
 type MatchingMessage struct {
-	Source uint32              `json:"source"`
-	Dest   uint32              `json:"dest"`
+	Source *Profile            `json:"source"`
+	Dest   *Profile            `json:"dest"`
 	Data   MatchingMessageData `json:"data"`
 }
 

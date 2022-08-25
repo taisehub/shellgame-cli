@@ -4,6 +4,13 @@ import (
 	"context"
 )
 
+type MatchingStatus uint8
+
+const (
+	WAITING     MatchingStatus = iota // マッチング待ち状態
+	NEGOTIATING                       // マッチング状態(対戦申請を受信または送信中)
+)
+
 type Player interface {
 	GetID() uint32
 }

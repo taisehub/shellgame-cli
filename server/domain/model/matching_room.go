@@ -50,8 +50,8 @@ func (mr *MatchingRoom) Run() {
 			mr.Players[player.GetID()] = player
 			for _, p := range mr.Players {
 				var msg = &MatchingMessage{
-					Source: player.GetID(),
-					Dest:   0,
+					Source: player.Profile,
+					Dest:   nil,
 					Data:   JOIN,
 				}
 				// 参加は全員に送信する
@@ -65,8 +65,8 @@ func (mr *MatchingRoom) Run() {
 			}
 			for _, p := range mr.Players {
 				var msg = &MatchingMessage{
-					Source: player.GetID(),
-					Dest:   0,
+					Source: player.Profile,
+					Dest:   nil,
 					Data:   LEAVE,
 				}
 				// 退室は全員に送信する
@@ -75,25 +75,25 @@ func (mr *MatchingRoom) Run() {
 		case msg := <-mr.message:
 			switch msg.Data {
 			case OFFER:
-				log.Printf("[+] OFFER: %s to %s\n", mr.Players[msg.Source].GetName(), mr.Players[msg.Dest].GetName())
+				log.Printf("[+] OFFER: %s to %s\n", mr.Players[msg.Source.ID].GetName(), mr.Players[msg.Dest.ID].GetName())
 				mr.HandleOffer(msg)
-				mr.Players[msg.Dest].matchingChan <- msg
+				mr.Players[msg.Dest.ID].matchingChan <- msg
 			case CANCEL_OFFER:
-				log.Printf("[+] CANCEL OFFER: %s to %s\n", mr.Players[msg.Source].GetName(), mr.Players[msg.Dest].GetName())
+				log.Printf("[+] CANCEL OFFER: %s to %s\n", mr.Players[msg.Source.ID].GetName(), mr.Players[msg.Dest.ID].GetName())
 				mr.HandleCancelOffer(msg)
-				mr.Players[msg.Dest].matchingChan <- msg
+				mr.Players[msg.Dest.ID].matchingChan <- msg
 			case ACCEPT:
-				log.Printf("[+] ACCEPT OFFER: %s to %s\n", mr.Players[msg.Source].GetName(), mr.Players[msg.Dest].GetName())
+				log.Printf("[+] ACCEPT OFFER: %s to %s\n", mr.Players[msg.Source.ID].GetName(), mr.Players[msg.Dest.ID].GetName())
 				mr.HandleAccept(msg)
-				mr.Players[msg.Source].matchingChan <- msg
-				mr.Players[msg.Dest].matchingChan <- msg
+				mr.Players[msg.Source.ID].matchingChan <- msg
+				mr.Players[msg.Dest.ID].matchingChan <- msg
 			case DENY:
-				log.Printf("[+] DENY OFFER: %s to %s\n", mr.Players[msg.Source].GetName(), mr.Players[msg.Dest].GetName())
+				log.Printf("[+] DENY OFFER: %s to %s\n", mr.Players[msg.Source.ID].GetName(), mr.Players[msg.Dest.ID].GetName())
 				mr.HandleDeny(msg)
-				mr.Players[msg.Dest].matchingChan <- msg
+				mr.Players[msg.Dest.ID].matchingChan <- msg
 			default:
 				err := &MatchingMessage{Data: ERROR}
-				mr.Players[msg.Source].matchingChan <- err
+				mr.Players[msg.Source.ID].matchingChan <- err
 			}
 		}
 	}
@@ -103,57 +103,57 @@ func (mr *MatchingRoom) Run() {
 // 申請者と承諾者のステータスが共にWAITINGであること確認し、両者のステータスをNEGOTIATINGにする。
 func (mr *MatchingRoom) HandleOffer(msg *MatchingMessage) {
 	// 受信者がRoomにいることを確認
-	_, ok := mr.Players[msg.Dest]
+	_, ok := mr.Players[msg.Dest.ID]
 	if !ok {
 		err := &MatchingMessage{Data: ERROR}
-		mr.Players[msg.Source].matchingChan <- err
+		mr.Players[msg.Source.ID].matchingChan <- err
 		return
 	}
 
-	if mr.Players[msg.Source].Status == NEGOTIATING || mr.Players[msg.Dest].Status == NEGOTIATING {
+	if mr.Players[msg.Source.ID].Status == NEGOTIATING || mr.Players[msg.Dest.ID].Status == NEGOTIATING {
 		err := &MatchingMessage{Data: ERROR}
-		mr.Players[msg.Source].matchingChan <- err
+		mr.Players[msg.Source.ID].matchingChan <- err
 		return
 	}
 
-	mr.Players[msg.Source].Status = NEGOTIATING
-	mr.Players[msg.Dest].Status = NEGOTIATING
+	mr.Players[msg.Source.ID].Status = NEGOTIATING
+	mr.Players[msg.Dest.ID].Status = NEGOTIATING
 }
 
 // 申請キャンセルのハンドリング
 // 申請者と承諾者のステータスが共にNEGITIATINGであること確認し、両者のステータスをWAITINGにする。
 func (mr *MatchingRoom) HandleCancelOffer(msg *MatchingMessage) {
-	_, ok := mr.Players[msg.Dest]
+	_, ok := mr.Players[msg.Dest.ID]
 	if !ok {
 		err := &MatchingMessage{Data: ERROR}
-		mr.Players[msg.Source].matchingChan <- err
+		mr.Players[msg.Source.ID].matchingChan <- err
 		return
 	}
 
 	// FIXME: 交渉中でないPlayerを宛先にしてMessageを送信することで交渉解除することが可能。
-	if mr.Players[msg.Source].Status == WAITING || mr.Players[msg.Dest].Status == WAITING {
+	if mr.Players[msg.Source.ID].Status == WAITING || mr.Players[msg.Dest.ID].Status == WAITING {
 		err := &MatchingMessage{Data: ERROR}
-		mr.Players[msg.Source].matchingChan <- err
+		mr.Players[msg.Source.ID].matchingChan <- err
 		return
 	}
 
-	mr.Players[msg.Source].Status = WAITING
-	mr.Players[msg.Dest].Status = WAITING
+	mr.Players[msg.Source.ID].Status = WAITING
+	mr.Players[msg.Dest.ID].Status = WAITING
 }
 
 // 申請に対する承諾のハンドリング
 // 申請者と承諾者のステータスが共にNEGITIATINGであること確認する。
 func (mr *MatchingRoom) HandleAccept(msg *MatchingMessage) {
-	_, ok := mr.Players[msg.Dest]
+	_, ok := mr.Players[msg.Dest.ID]
 	if !ok {
 		err := &MatchingMessage{Data: ERROR}
-		mr.Players[msg.Source].matchingChan <- err
+		mr.Players[msg.Source.ID].matchingChan <- err
 		return
 	}
 
-	if mr.Players[msg.Source].Status == WAITING || mr.Players[msg.Dest].Status == WAITING {
+	if mr.Players[msg.Source.ID].Status == WAITING || mr.Players[msg.Dest.ID].Status == WAITING {
 		err := &MatchingMessage{Data: ERROR}
-		mr.Players[msg.Source].matchingChan <- err
+		mr.Players[msg.Source.ID].matchingChan <- err
 		return
 	}
 }
@@ -162,20 +162,20 @@ func (mr *MatchingRoom) HandleAccept(msg *MatchingMessage) {
 // 申請者と承諾者のステータスが共にNEGITIATINGであること確認する。
 func (mr *MatchingRoom) HandleDeny(msg *MatchingMessage) {
 	//  以下の条件を満たす場合、申請者に対してマッチングが成立しなかったことを通達し、申請者と承認者のMatchingStateをWAITINGにする。
-	_, ok := mr.Players[msg.Dest]
+	_, ok := mr.Players[msg.Dest.ID]
 	if !ok {
 		err := &MatchingMessage{Data: ERROR}
-		mr.Players[msg.Source].matchingChan <- err
+		mr.Players[msg.Source.ID].matchingChan <- err
 		return
 	}
 
 	// FIXME: 交渉中でないPlayerを宛先にしてMessageを送信することで交渉解除することが可能。
-	if mr.Players[msg.Source].Status == WAITING || mr.Players[msg.Dest].Status == WAITING {
+	if mr.Players[msg.Source.ID].Status == WAITING || mr.Players[msg.Dest.ID].Status == WAITING {
 		err := &MatchingMessage{Data: ERROR}
-		mr.Players[msg.Source].matchingChan <- err
+		mr.Players[msg.Source.ID].matchingChan <- err
 		return
 	}
 
-	mr.Players[msg.Source].Status = WAITING
-	mr.Players[msg.Dest].Status = WAITING
+	mr.Players[msg.Source.ID].Status = WAITING
+	mr.Players[msg.Dest.ID].Status = WAITING
 }
