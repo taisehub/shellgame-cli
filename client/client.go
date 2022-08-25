@@ -1,16 +1,16 @@
 package shellgame
 
 import (
-	"log"
 	"bytes"
-	"github.com/google/uuid"
+	"encoding/json"
 	"fmt"
+	"github.com/google/uuid"
 	"github.com/gorilla/websocket"
+	"github.com/taise-hub/shellgame-cli/server/domain/model"
+	"log"
 	"net/http"
 	"net/url"
 	"time"
-	"encoding/json"
-	"github.com/taise-hub/shellgame-cli/server/domain/model"
 )
 
 const (
@@ -18,9 +18,9 @@ const (
 )
 
 var (
-	baseEndpoint  = &url.URL{Scheme: "http", Host: HOST, Path: "/"}
+	baseEndpoint    = &url.URL{Scheme: "http", Host: HOST, Path: "/"}
 	profileEndpoint = &url.URL{Scheme: "http", Host: HOST, Path: "/profile"}
-	shellEndpoint = &url.URL{Scheme: "ws", Host: HOST, Path: "/shell"}
+	shellEndpoint   = &url.URL{Scheme: "ws", Host: HOST, Path: "/shell"}
 )
 
 func newClient() (*http.Client, error) {
