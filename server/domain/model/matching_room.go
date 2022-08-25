@@ -6,7 +6,7 @@ import (
 
 var (
 	matchingRoom *MatchingRoom = &MatchingRoom{
-		Players:    make(map[uint32]*MatchingPlayer),
+		Players:    make(map[string]*MatchingPlayer),
 		message:    make(chan *MatchingMessage),
 		register:   make(chan *MatchingPlayer),
 		unregister: make(chan *MatchingPlayer),
@@ -16,7 +16,7 @@ var (
 // shellgame-cliサーバ上で一つだけ存在。
 // 対戦待ち状態の管理を行う。
 type MatchingRoom struct {
-	Players    map[uint32]*MatchingPlayer // 誰がMatchigRoomにいるのか把握するために利用。
+	Players    map[string]*MatchingPlayer // 誰がMatchigRoomにいるのか把握するために利用。
 	message    chan *MatchingMessage
 	register   chan *MatchingPlayer
 	unregister chan *MatchingPlayer

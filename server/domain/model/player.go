@@ -12,7 +12,7 @@ const (
 )
 
 type Player interface {
-	GetID() uint32
+	GetID() string
 }
 
 type MatchingPlayer struct {
@@ -22,7 +22,7 @@ type MatchingPlayer struct {
 	matchingChan chan *MatchingMessage `json:"-"`
 }
 
-func NewMatchingPlayer(id uint32, name string, conn Conn) *MatchingPlayer {
+func NewMatchingPlayer(id string, name string, conn Conn) *MatchingPlayer {
 	profile := &Profile{ID: id, Name: name}
 	return &MatchingPlayer{
 		Profile:      profile,
@@ -32,7 +32,7 @@ func NewMatchingPlayer(id uint32, name string, conn Conn) *MatchingPlayer {
 	}
 }
 
-func (p *MatchingPlayer) GetID() uint32 {
+func (p *MatchingPlayer) GetID() string {
 	return p.Profile.ID
 }
 

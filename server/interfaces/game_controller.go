@@ -8,10 +8,8 @@ import (
 	"github.com/gorilla/websocket"
 	"github.com/taise-hub/shellgame-cli/server/domain/model"
 	"github.com/taise-hub/shellgame-cli/server/usecase"
-	"math/rand"
 	"net/http"
 	"sync"
-	"time"
 )
 
 const (
@@ -62,7 +60,16 @@ func (con *GameController) Profile(w http.ResponseWriter, req *http.Request) {
 
 func (con *GameController) saveProfile(w http.ResponseWriter, req *http.Request) {
 	sess, _ := store.Get(req, SESS_NAME)
-	name := req.FormValue("name")
+	var b []byte
+	req.Body.Read(b)
+	defer req.Body.Close()
+	json, err := ParseJSON(b)
+	if err != nil {
+		http.Error(w, err.Error(), http.StatusInternalServerError)
+		return
+	}
+	id := json["id"].(string)
+	name := json["name"].(string)
 	if name == "" {
 		w.Header().Set("Content-Type", "text/plain; charset=utf-8")
 		w.Header().Set("X-Content-Type-Options", "nosniff")
@@ -70,11 +77,7 @@ func (con *GameController) saveProfile(w http.ResponseWriter, req *http.Request)
 		fmt.Fprintln(w, "400 bad reuqest")
 		return
 	}
-	// もうちょっとスマートにidを生成をしたい
-	src := rand.NewSource(time.Now().UnixNano())
-	random := rand.New(src)
-	sess.Values["id"] = random.Uint32()
-	// ------------
+	sess.Values["id"] = id
 	sess.Values["name"] = name
 	if err := store.Save(req, w, sess); err != nil {
 		http.Error(w, err.Error(), http.StatusInternalServerError)
@@ -104,8 +107,16 @@ func (con *GameController) WaitMatch(w http.ResponseWriter, req *http.Request) {
 		return
 	}
 	sess, _ := store.Get(req, SESS_NAME)
-	player := model.NewMatchingPlayer(sess.Values["id"].(uint32), sess.Values["name"].(string), &WebsocketConn{conn, sync.Mutex{}})
+	player := model.NewMatchingPlayer(sess.Values["id"].(string), sess.Values["name"].(string), &WebsocketConn{conn, sync.Mutex{}})
 	con.usecase.WaitMatch(player)
+}
+
+func ParseJSON(data []byte) (map[string]any, error) {
+	var obj map[string]interface{}
+	if err := json.Unmarshal(data, &obj); err != nil {
+		return nil, err
+	}
+	return obj, nil
 }
 
 func RespondJSON(w http.ResponseWriter, body any, status int) {
