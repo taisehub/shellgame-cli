@@ -3,11 +3,14 @@ package shellgame
 import (
 	"log"
 	"bytes"
+	"github.com/google/uuid"
 	"fmt"
 	"github.com/gorilla/websocket"
 	"net/http"
 	"net/url"
 	"time"
+	"encoding/json"
+	"github.com/taise-hub/shellgame-cli/server/domain/model"
 )
 
 const (
@@ -50,12 +53,15 @@ func ConnectShell() (*websocket.Conn, error) {
 }
 
 // プロフィールをシェルゲーサーバに送信します。
-func PostProfile() error {
-	var jsonData = []byte(`{
-		"name": "morpheus",
-		"job": "leader"
-	}`)
-	request, err := http.NewRequest("POST", profileEndpoint.String(), bytes.NewBuffer(jsonData))
+func PostProfile(name string) error {
+	id := uuid.New()
+	profile := &model.Profile{ID: id.String(), Name: name}
+	p, err := json.Marshal(profile)
+	if err != nil {
+		return err
+	}
+
+	request, err := http.NewRequest("POST", profileEndpoint.String(), bytes.NewBuffer(p))
 	if err != nil {
 		return err
 	}
