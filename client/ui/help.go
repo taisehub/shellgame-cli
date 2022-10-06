@@ -4,6 +4,8 @@ import (
 	tea "github.com/charmbracelet/bubbletea"
 )
 
+// helpModelはヘルプ画面の実装
+// 現在の構想ではtea.Modelは不要なため実装してない
 type helpModel struct {
 	focus bool
 }

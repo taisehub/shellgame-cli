@@ -34,7 +34,7 @@ func newClient() (*http.Client, error) {
 	}, nil
 }
 
-// シェルゲーサーバで稼働するコンテナにWebSocketを利用して接続します。
+// シェルゲーサーバで稼働するコンテナにWebSocketを利用して接続する。
 func ConnectShell() (*websocket.Conn, error) {
 	var header http.Header
 	jar, err := getJar()
@@ -52,7 +52,7 @@ func ConnectShell() (*websocket.Conn, error) {
 	return wsconn, nil
 }
 
-// プロフィールをシェルゲーサーバに送信します。
+// プロフィールをシェルゲーサーバに送信する。
 func PostProfile(name string) error {
 	id := uuid.New()
 	profile := &model.Profile{ID: id.String(), Name: name}

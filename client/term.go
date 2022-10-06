@@ -6,6 +6,8 @@ import (
 	"os"
 )
 
+// Terminalは.github.com/charmbracelet/bubbletea.ExecCommandの実装
+// websoketを利用してシェルゲーサーバで用意されるコンテナに接続する。
 type Terminal struct {
 	Stdin  io.Reader
 	Stdout io.Writer

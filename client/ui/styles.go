@@ -15,7 +15,7 @@ var (
 	selectedItemStyle = baseStyle.Copy().Foreground(lipgloss.Color("41"))
 )
 
-// ターミナルの幅を取得し設定
+// ターミナルの幅を取得し設定する
 func init() {
 	var err error
 	width, _, err = term.GetSize(0)
