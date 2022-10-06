@@ -20,20 +20,22 @@ type screen string
 
 func (i screen) FilterValue() string { return "" }
 
+// 対戦、終了、ヘルプ等の画面切り替えを通知するメッセージ
 type screenChangeMsg struct{}
 
+// 対戦、終了、ヘルプ等の画面切り替えメッセージを通知する関数
 func screenChange() tea.Cmd {
 	return func() tea.Msg {
 		return screenChangeMsg{}
 	}
 }
 
-type itemDelegate struct{}
+type screenDelegate struct{}
 
-func (d itemDelegate) Height() int                               { return 1 }
-func (d itemDelegate) Spacing() int                              { return 0 }
-func (d itemDelegate) Update(msg tea.Msg, m *list.Model) tea.Cmd { return nil }
-func (d itemDelegate) Render(w io.Writer, m list.Model, index int, listItem list.Item) {
+func (d screenDelegate) Height() int                               { return 1 }
+func (d screenDelegate) Spacing() int                              { return 0 }
+func (d screenDelegate) Update(msg tea.Msg, m *list.Model) tea.Cmd { return nil }
+func (d screenDelegate) Render(w io.Writer, m list.Model, index int, listItem list.Item) {
 	i, ok := listItem.(screen)
 	if !ok {
 		return
@@ -51,24 +53,34 @@ func (d itemDelegate) Render(w io.Writer, m list.Model, index int, listItem list
 	fmt.Fprintf(w, fn(str))
 }
 
+//モデルはシェルゲーのUIを表現します。
 type model struct {
-	screen string
-	list   list.Model
-	match  matchModel
-	help   helpModel
+	screen  string
+	screens list.Model
+	match   matchModel
+	help    helpModel
 }
 
 func NewModel() model {
-	l := list.New(screens, itemDelegate{}, width, 14)
-	l.Title = title
-	l.Styles.Title = titleStyle
-	l.SetShowStatusBar(false)
-	l.SetFilteringEnabled(false)
-	l.SetShowHelp(false)
+	var m model
 
-	m := NewMatchModel()
+	s := list.New(screens, screenDelegate{}, width, 14)
+	s.Title = title
+	s.Styles.Title = titleStyle
+	s.SetShowStatusBar(false)
+	s.SetFilteringEnabled(false)
+	s.SetShowHelp(false)
+
+	mm := NewMatchModel()
 	h := NewHelpModel()
-	return model{screen: "", list: l, match: m, help: h}
+
+	m.screen = ""
+	m.screens = s
+	m.match = mm
+	m.help = h
+
+	m.match.parent = &m // 子モデルであるMatchModelに自信のポインタを設定する
+	return m
 }
 
 func (m model) Init() tea.Cmd {
@@ -78,7 +90,7 @@ func (m model) Init() tea.Cmd {
 func (m model) Update(msg tea.Msg) (tea.Model, tea.Cmd) {
 	switch m.screen {
 	case "対戦":
-		return m.match.Update(msg, m)
+		return m.match.Update(msg)
 	case "ヘルプ":
 		return m.help.Update(msg, m)
 	default:
@@ -91,12 +103,12 @@ func updateTop(msg tea.Msg, m model) (tea.Model, tea.Cmd) {
 	case screenChangeMsg:
 	case tea.KeyMsg:
 		switch msg.String() {
-		case "q":
+		case "q": // TOP画面に戻る
 			return m, nil
-		case "ctrl+c":
+		case "ctrl+c": // プログラムの終了
 			return m, tea.Quit
-		case "enter":
-			i, ok := m.list.SelectedItem().(screen)
+		case "enter": // 画面遷移の実行
+			i, ok := m.screens.SelectedItem().(screen)
 			if !ok {
 				return m, nil
 			}
@@ -108,7 +120,7 @@ func updateTop(msg tea.Msg, m model) (tea.Model, tea.Cmd) {
 		}
 	}
 	var cmd tea.Cmd
-	m.list, cmd = m.list.Update(msg)
+	m.screens, cmd = m.screens.Update(msg)
 	return m, cmd
 }
 
@@ -119,6 +131,6 @@ func (m model) View() string {
 	case "ヘルプ":
 		return m.help.View()
 	default:
-		return "\n" + m.list.View()
+		return "\n" + m.screens.View()
 	}
 }
