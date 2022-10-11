@@ -79,7 +79,7 @@ func NewModel() model {
 	m.match = mm
 	m.help = h
 
-	m.match.parent = &m // 子モデルであるMatchModelに自信のポインタを設定する
+	m.match.parent = &m // 子モデルであるMatchModelの親ポインタにこのモデルのアドレスを設定する
 	return m
 }
 
