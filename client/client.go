@@ -28,6 +28,7 @@ type Client struct {
 	*http.Client
 	baseEndpoint    *url.URL
 	profileEndpoint *url.URL
+	playersEndpoint *url.URL
 	shellEndpoint 	*url.URL
 }
 
@@ -43,6 +44,7 @@ func newClient() (*Client, error) {
 	}
 	c.baseEndpoint =  &url.URL{Scheme: "http", Host: HOST, Path: "/"}
 	c.profileEndpoint = &url.URL{Scheme: "http", Host: HOST, Path: "/profile"}
+	c.playersEndpoint = &url.URL{Scheme: "http", Host: HOST, Path: "/players"}
 	c.shellEndpoint   = &url.URL{Scheme: "ws", Host: HOST, Path: "/shell"}
 	return c, nil
 }
@@ -75,20 +77,20 @@ func (c *Client) PostProfile(name string) error {
 		return err
 	}
 
-	request, err := http.NewRequest("POST", c.profileEndpoint.String(), bytes.NewBuffer(p))
+	req, err := http.NewRequest("POST", c.profileEndpoint.String(), bytes.NewBuffer(p))
 	if err != nil {
 		return err
 	}
-	request.Header.Set("Content-Type", "application/json; charset=UTF-8")
+	req.Header.Set("Content-Type", "application/json; charset=UTF-8")
 
-	resp, err := c.Do(request)
+	resp, err := c.Do(req)
 	if err != nil {
 		return err
 	}
 	defer resp.Body.Close()
 	body, err := ioutil.ReadAll(resp.Body)
 	if err != nil {
-		return fmt.Errorf("failed to read response body")
+		return err
 	}
 
 	if resp.StatusCode != 200 {
@@ -96,4 +98,28 @@ func (c *Client) PostProfile(name string) error {
 	}
 
 	return nil
+}
+
+func (c *Client) GetMatchingPlayers() ([]*model.MatchingPlayer, error) {
+	req, err := http.NewRequest("GET", c.playersEndpoint.String(), nil)
+	if err != nil {
+		return nil, err
+	}
+
+	resp, err := c.Do(req)
+	if err != nil {
+		return nil, err
+	}
+	defer resp.Body.Close()
+
+	body, err := ioutil.ReadAll(resp.Body)
+	if err != nil {
+		return nil, err
+	}
+
+	var players []*model.MatchingPlayer
+    if err := json.Unmarshal(body, &players); err != nil {
+		return nil, err
+	}
+	return players, nil
 }
