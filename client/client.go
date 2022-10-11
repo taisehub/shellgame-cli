@@ -2,12 +2,12 @@ package shellgame
 
 import (
 	"bytes"
-	"io/ioutil"
 	"encoding/json"
 	"fmt"
 	"github.com/google/uuid"
 	"github.com/gorilla/websocket"
 	"github.com/taise-hub/shellgame-cli/server/domain/model"
+	"io/ioutil"
 	"net/http"
 	"net/url"
 	"time"
@@ -29,7 +29,7 @@ type Client struct {
 	baseEndpoint    *url.URL
 	profileEndpoint *url.URL
 	playersEndpoint *url.URL
-	shellEndpoint 	*url.URL
+	shellEndpoint   *url.URL
 }
 
 func newClient() (*Client, error) {
@@ -42,10 +42,10 @@ func newClient() (*Client, error) {
 		Jar:     jar,
 		Timeout: 20 * time.Second,
 	}
-	c.baseEndpoint =  &url.URL{Scheme: "http", Host: HOST, Path: "/"}
+	c.baseEndpoint = &url.URL{Scheme: "http", Host: HOST, Path: "/"}
 	c.profileEndpoint = &url.URL{Scheme: "http", Host: HOST, Path: "/profile"}
 	c.playersEndpoint = &url.URL{Scheme: "http", Host: HOST, Path: "/players"}
-	c.shellEndpoint   = &url.URL{Scheme: "ws", Host: HOST, Path: "/shell"}
+	c.shellEndpoint = &url.URL{Scheme: "ws", Host: HOST, Path: "/shell"}
 	return c, nil
 }
 
@@ -118,7 +118,7 @@ func (c *Client) GetMatchingPlayers() ([]*model.MatchingPlayer, error) {
 	}
 
 	var players []*model.MatchingPlayer
-    if err := json.Unmarshal(body, &players); err != nil {
+	if err := json.Unmarshal(body, &players); err != nil {
 		return nil, err
 	}
 	return players, nil

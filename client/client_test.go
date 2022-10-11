@@ -1,13 +1,13 @@
 package shellgame
 
 import (
-	"fmt"
 	"encoding/json"
-	"net/http/httptest"
+	"fmt"
+	"github.com/taise-hub/shellgame-cli/server/domain/model"
 	"net/http"
+	"net/http/httptest"
 	"net/url"
 	"testing"
-	"github.com/taise-hub/shellgame-cli/server/domain/model"
 )
 
 func TestPostProfile(t *testing.T) {
@@ -23,7 +23,7 @@ func TestPostProfile(t *testing.T) {
 			w.WriteHeader(http.StatusBadRequest)
 			fmt.Fprintf(w, "20文字以内で入力してください。")
 			return
-		} 
+		}
 		w.WriteHeader(http.StatusOK)
 		fmt.Fprintf(w, "OK")
 		return
@@ -34,7 +34,7 @@ func TestPostProfile(t *testing.T) {
 		name string
 	}
 	tests := map[string]struct {
-		args     args
+		args        args
 		expectedErr error
 	}{
 		"ステータスコードが200の時、エラーを起こさずに終了できる。": {
@@ -63,7 +63,7 @@ func TestPostProfile(t *testing.T) {
 			actual := sut.PostProfile(tt.args.name)
 			if actual != nil {
 				if actual.Error() != tt.expectedErr.Error() {
-					t.Errorf("Expected: %v\n\t\t Actual: %v \n" , tt.expectedErr, actual)
+					t.Errorf("Expected: %v\n\t\t Actual: %v \n", tt.expectedErr, actual)
 				}
 			}
 		})
@@ -74,16 +74,16 @@ func TestGetPlayers(t *testing.T) {
 	//NOTE: APIのレスポンスの仕様が固ってないためとりあえずtext/plainを返す。
 	ts := httptest.NewServer(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
 		players := []*model.MatchingPlayer{
-			&model.MatchingPlayer {
+			&model.MatchingPlayer{
 				Profile: &model.Profile{
-					ID: "da3fc9dd-bff1-43ed-b360-91e4f4ee9db1",
+					ID:   "da3fc9dd-bff1-43ed-b360-91e4f4ee9db1",
 					Name: "Bob",
 				},
 				Status: model.WAITING,
 			},
-			&model.MatchingPlayer {
+			&model.MatchingPlayer{
 				Profile: &model.Profile{
-					ID: "22166795-397e-4a16-ad7e-f63bc8cc9222",
+					ID:   "22166795-397e-4a16-ad7e-f63bc8cc9222",
 					Name: "Alice",
 				},
 				Status: model.WAITING,
@@ -110,7 +110,7 @@ func TestGetPlayers(t *testing.T) {
 	tests := map[string]struct {
 		expectedErr error
 	}{
-		"ステータスコードが200の時、model.Playersの配列を返すことができる。" :{
+		"ステータスコードが200の時、model.Playersの配列を返すことができる。": {
 			expectedErr: nil,
 		},
 	}
@@ -126,7 +126,7 @@ func TestGetPlayers(t *testing.T) {
 			actual, err := sut.GetMatchingPlayers()
 			if err != nil {
 				if err.Error() != tt.expectedErr.Error() {
-					t.Errorf("Expected: %v\n\t\t Actual: %v \n" , tt.expectedErr, actual)
+					t.Errorf("Expected: %v\n\t\t Actual: %v \n", tt.expectedErr, actual)
 				}
 			}
 			for _, v := range actual {
