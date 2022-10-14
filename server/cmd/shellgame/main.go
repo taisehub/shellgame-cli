@@ -27,9 +27,9 @@ func main() {
 	go model.GetMatchingRoom().Run()
 
 	mux := http.NewServeMux()
-	mux.HandleFunc("/profile", gameController.Profile)
-	mux.HandleFunc("/match", gameController.Match)
-	mux.HandleFunc("/match/wait", gameController.WaitMatch)
+	mux.HandleFunc("/profiles", gameController.Profile)
+	mux.HandleFunc("/players", gameController.Match)
+	mux.HandleFunc("/waitmatch", gameController.WaitMatch)
 	mux.HandleFunc("/shell", gameController.Start)
 
 	log.Println("[+] Start listening.")
