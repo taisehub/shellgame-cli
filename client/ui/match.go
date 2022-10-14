@@ -51,25 +51,24 @@ func NewMatchModel() (matchModel, error) {
 }
 
 func (mm matchModel) Init() tea.Cmd {
-	// FIXME: screenChangeMsgを受け取ったた時にコネクション張る方がいいかも？
-	conn, err := shellgame.ConnectMatchingRoom()
-	if err != nil {
-		log.Fatalf("%v\n", err.Error())
-	}
-	mm.conn = conn
-	go mm.matching()
 	return nil
 }
 
 func (mm matchModel) Update(msg tea.Msg) (tea.Model, tea.Cmd) {
 	switch msg := msg.(type) {
+	case screenChangeMsg:
+		conn, err := shellgame.ConnectMatchingRoom()
+		if err != nil {
+			log.Fatalf("%v\n", err.Error())
+		}
+		mm.conn = conn
+		go mm.matching()
+		return mm, nil
 	case MatchingMsg:
 	// 受け取ったメッセージによって処理を分ける
 	// 2. 対戦要求の受け取り
 	// 3. 対戦要求に対する返答(DENY or ACCEPT)
 	// case timeoutMsg: // 対戦要求に一定時間返答がない場合に受け取るメッセージ
-	case screenChangeMsg:
-		return mm, nil
 	case tea.KeyMsg:
 		switch keypress := msg.String(); keypress {
 		case "ctrl+c":
@@ -88,6 +87,7 @@ func (mm matchModel) Update(msg tea.Msg) (tea.Model, tea.Cmd) {
 			// 送信後、matchModelの状態をwaitとかにしてローディング画面でも表示しとく？
 			return mm, nil
 		case "q":
+			mm.conn.Close()
 			return mm.parent, screenChange()
 		}
 	}
