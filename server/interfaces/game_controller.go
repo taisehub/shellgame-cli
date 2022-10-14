@@ -60,7 +60,7 @@ func (con *GameController) Profile(w http.ResponseWriter, req *http.Request) {
 
 func (con *GameController) saveProfile(w http.ResponseWriter, req *http.Request) {
 	sess, _ := store.Get(req, SESS_NAME)
-	var b []byte
+	b := make([]byte, req.ContentLength)
 	req.Body.Read(b)
 	defer req.Body.Close()
 	json, err := ParseJSON(b)
