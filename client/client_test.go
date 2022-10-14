@@ -53,14 +53,9 @@ func TestPostProfile(t *testing.T) {
 
 	for tName, tt := range tests {
 		t.Run(tName, func(t *testing.T) {
-			sut, err := newClient()
-			if err != nil {
-				t.Errorf("%s\n", err.Error())
-			}
 			url, _ := url.Parse(ts.URL)
-			sut.profileEndpoint = url
-
-			actual := sut.PostProfile(tt.args.name)
+			profileEndpoint = url
+			actual := PostProfile(tt.args.name)
 			if actual != nil {
 				if actual.Error() != tt.expectedErr.Error() {
 					t.Errorf("Expected: %v\n\t\t Actual: %v \n", tt.expectedErr, actual)
@@ -116,14 +111,10 @@ func TestGetPlayers(t *testing.T) {
 	}
 	for tName, tt := range tests {
 		t.Run(tName, func(t *testing.T) {
-			sut, err := newClient()
-			if err != nil {
-				t.Errorf("%s\n", err.Error())
-			}
 			url, _ := url.Parse(ts.URL)
-			sut.playersEndpoint = url
+			playersEndpoint = url
 
-			actual, err := sut.GetMatchingPlayers()
+			actual, err := GetMatchingPlayers()
 			if err != nil {
 				if err.Error() != tt.expectedErr.Error() {
 					t.Errorf("Expected: %v\n\t\t Actual: %v \n", tt.expectedErr, actual)
