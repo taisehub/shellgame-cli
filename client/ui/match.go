@@ -124,7 +124,8 @@ func (mm matchModel) readPump() {
 	defer mm.conn.Close()
 	p := GetProgram()
 	for { 
-		var msg *MatchingMsg
+		//var msg *MatchingMsg
+		msg := &MatchingMsg{}
 		if err := mm.ReadConn(msg); err != nil {
 			return
 		}
