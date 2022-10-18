@@ -10,7 +10,8 @@ import (
 	shellgame "github.com/taise-hub/shellgame-cli/client"
 )
 
-var mu sync.Mutex
+var muRead sync.Mutex
+var muWrite sync.Mutex
 
 type matchModel struct {
 	list         list.Model
@@ -29,24 +30,6 @@ func NewMatchModel() (matchModel, error) {
 	l.SetShowHelp(false)
 	mc := make(chan *MatchingMsg)
 
-	err := shellgame.PostProfile("hoge")
-	if err != nil {
-		return matchModel{}, err
-	}
-	players, err := shellgame.GetMatchingPlayers()
-	if err != nil {
-		return matchModel{}, err
-	}
-
-	var profiles []list.Item
-	for _, v := range players {
-		profiles = append(profiles, Profile{v.Profile.ID, v.Profile.Name})
-	}
-	// FIXME: 下2行いつか消す
-	profiles = append(profiles, Profile{"1", "bob"})
-	profiles = append(profiles, Profile{"2", "alice"})
-	l.SetItems(profiles)
-
 	return matchModel{list: l, waiting: false, matchingChan: mc}, nil
 }
 
@@ -57,11 +40,28 @@ func (mm matchModel) Init() tea.Cmd {
 func (mm matchModel) Update(msg tea.Msg) (tea.Model, tea.Cmd) {
 	switch msg := msg.(type) {
 	case screenChangeMsg:
+		players, err := shellgame.GetMatchingPlayers()
+		if err != nil {
+			return matchModel{}, tea.Quit
+		}
+
+		var profiles []list.Item
+		for _, v := range players {
+			profiles = append(profiles, Profile{v.Profile.ID, v.Profile.Name})
+		}
+		mm.list.SetItems(profiles)
+
+		// FIXME: 後で消す
+		if err = shellgame.PostProfile("hoge"); err != nil {
+			return matchModel{}, tea.Quit
+		}
+
 		conn, err := shellgame.ConnectMatchingRoom()
 		if err != nil {
 			log.Fatalf("%v\n", err.Error())
 		}
 		mm.conn = conn
+		mm.conn.SetPongHandler(func(string) error { mm.conn.SetReadDeadline(time.Now().Add(60 * time.Second)); return nil })
 		go mm.matching()
 		return mm, nil
 	case MatchingMsg:
@@ -79,9 +79,10 @@ func (mm matchModel) Update(msg tea.Msg) (tea.Model, tea.Cmd) {
 
 		case "enter":
 			// チャネルに書き込んで、writePump()にデータを流せばOK
-			msg := &MatchingMsg{}
 			dest, _ := mm.list.SelectedItem().(Profile)
-			msg.Dest = dest
+			msg := &MatchingMsg{
+				Dest: dest,
+			}
 			mm.matchingChan <- msg
 			// 送信時に3分後にtimeoutMsgを通知する処理をgoroutineで動かす。
 			// 送信後、matchModelの状態をwaitとかにしてローディング画面でも表示しとく？
@@ -107,14 +108,21 @@ func (mm matchModel) matching() {
 
 // mm.Update()から受け取ったメッセージをwebsocketに流す。
 func (mm matchModel) writePump() {
+	ticker := time.NewTicker(10 * time.Second)
 	defer mm.conn.Close()
 	for {
-		m, ok := <- mm.matchingChan
-		if !ok {
-			return
-		}
-		if err := mm.WriteConn(m); err != nil {
-			return
+		select {
+		case m, ok := <- mm.matchingChan:
+			if !ok {
+				return
+			}
+			if err := mm.WriteConn(m); err != nil {
+				return
+			}
+		case <- ticker.C:
+			if err := mm.conn.WriteMessage(websocket.PingMessage, nil); err != nil {
+				return
+			}
 		}
 	}
 }
@@ -123,8 +131,8 @@ func (mm matchModel) writePump() {
 func (mm matchModel) readPump() {
 	defer mm.conn.Close()
 	p := GetProgram()
+	mm.conn.SetReadDeadline(time.Now().Add(60 * time.Second))
 	for { 
-		//var msg *MatchingMsg
 		msg := &MatchingMsg{}
 		if err := mm.ReadConn(msg); err != nil {
 			return
@@ -133,16 +141,15 @@ func (mm matchModel) readPump() {
 	}
 }
 
-func (mm matchModel) WriteConn(msg *MatchingMsg) error {
-	defer mu.Unlock()
-	mu.Lock()
+func (mm matchModel) WriteConn(msg any) error {
+	defer muWrite.Unlock()
+	muWrite.Lock()
 	mm.conn.SetWriteDeadline(time.Now().Add(10 * time.Second))
 	return mm.conn.WriteJSON(msg)
 }
 
 func (mm matchModel) ReadConn(msg *MatchingMsg) error {
-	defer mu.Unlock()
-	mu.Lock()
-	mm.conn.SetReadDeadline(time.Now().Add(10 * time.Second))
+	defer muRead.Unlock()
+	muRead.Lock()
 	return mm.conn.ReadJSON(msg)
 }
