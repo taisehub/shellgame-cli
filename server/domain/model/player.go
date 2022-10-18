@@ -45,7 +45,7 @@ func (p *MatchingPlayer) ReadPump() {
 		p.conn.Close()
 		GetMatchingRoom().unregister <- p
 	}()
-	var msg *MatchingMessage
+	msg := &MatchingMessage{}
 	for {
 		if err := p.conn.Read(msg); err != nil {
 			return

@@ -9,35 +9,49 @@ import (
 
 const (
 	writeWait      = 10 * time.Second
-	readWait       = 10 * time.Second
+	readWait       = 60 * time.Second
 	maxMessageSize = 512
 )
 
 type WebsocketConn struct {
 	*websocket.Conn
-	sync.Mutex
+}
+
+func NewWebsocketConn(conn *websocket.Conn) *WebsocketConn {
+	conn.SetReadLimit(maxMessageSize)
+	conn.SetWriteDeadline(time.Now().Add(writeWait))
+	conn.SetReadDeadline(time.Now().Add(readWait))
+	conn.SetPingHandler(func(string) error { 
+		conn.SetReadDeadline(time.Now().Add(readWait));
+		conn.SetWriteDeadline(time.Now().Add(writeWait))
+		if err :=conn.WriteMessage(websocket.PongMessage, nil); err != nil {
+			return err
+		}
+		return nil
+	 })
+	return &WebsocketConn{conn}
 }
 
 // コネクションをcloseする前にCloseを通知するメッセージを送信することにする。
 // shellgame-clientの実装によっては不要になる可能性あり。
 func (wc *WebsocketConn) Close() error {
-	defer wc.Unlock()
-	wc.Lock()
+	mu := sync.Mutex{}
+	defer mu.Unlock()
+	mu.Lock()
 	wc.WriteMessage(websocket.CloseMessage, []byte{})
 	return wc.Conn.Close()
 }
 
 func (wc *WebsocketConn) Read(msg model.Message) error {
-	defer wc.Unlock()
-	wc.Lock()
-	wc.SetReadLimit(maxMessageSize)
-	wc.SetReadDeadline(time.Now().Add(readWait))
+	mu := sync.Mutex{}
+	defer mu.Unlock()
+	mu.Lock()
 	return wc.ReadJSON(msg)
 }
 
 func (wc *WebsocketConn) Write(msg model.Message) error {
-	defer wc.Unlock()
-	wc.Lock()
-	wc.SetWriteDeadline(time.Now().Add(writeWait))
+	mu := sync.Mutex{}
+	defer mu.Unlock()
+	mu.Lock()
 	return wc.WriteJSON(msg)
 }

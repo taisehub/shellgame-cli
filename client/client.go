@@ -1,17 +1,15 @@
 package shellgame
 
 import (
-	"log"
 	"bytes"
-	//"github.com/google/uuid"
+	"encoding/json"
 	"fmt"
-	//"strconv"
+	"github.com/google/uuid"
 	"github.com/gorilla/websocket"
+	"github.com/taise-hub/shellgame-cli/server/domain/model"
+	"io/ioutil"
 	"net/http"
 	"net/url"
-	"time"
-	"encoding/json"
-	"github.com/taise-hub/shellgame-cli/server/domain/model"
 )
 
 const (
@@ -19,66 +17,94 @@ const (
 )
 
 var (
-	baseEndpoint  = &url.URL{Scheme: "http", Host: HOST, Path: "/"}
-	profileEndpoint = &url.URL{Scheme: "http", Host: HOST, Path: "/profile"}
-	shellEndpoint = &url.URL{Scheme: "ws", Host: HOST, Path: "/shell"}
+	baseEndpoint     = &url.URL{Scheme: "http", Host: HOST, Path: "/"}
+	profileEndpoint  = &url.URL{Scheme: "http", Host: HOST, Path: "/profiles"}
+	playersEndpoint = &url.URL{Scheme: "http", Host: HOST, Path: "/players"}
+	shellEndpoint    = &url.URL{Scheme: "ws", Host: HOST, Path: "/shell"}
+	matchingEndpoint = &url.URL{Scheme: "ws", Host: HOST, Path: "/waitmatch"}
 )
 
-func newClient() (*http.Client, error) {
-	jar, err := getJar()
-	if err != nil {
-		return nil, err
-	}
-	return &http.Client{
-		Jar:     jar,
-		Timeout: 20 * time.Second,
-	}, nil
-}
-
-// シェルゲーサーバで稼働するコンテナにWebSocketを利用して接続します。
+// シェルゲーサーバで稼働するコンテナにWebSocketを利用して接続する。
 func ConnectShell() (*websocket.Conn, error) {
-	var header http.Header
 	jar, err := getJar()
 	if err != nil {
 		return nil, err
 	}
+	header := http.Header{}
 	for _, cookie := range jar.Cookies(baseEndpoint) {
 		header.Add("Cookie", fmt.Sprintf("%s=%s", cookie.Name, cookie.Value))
 	}
+
 	wsconn, _, err := websocket.DefaultDialer.Dial(shellEndpoint.String(), header)
 	if err != nil {
 		return nil, err
 	}
-
 	return wsconn, nil
 }
 
-// プロフィールをシェルゲーサーバに送信します。
+// シェルゲーサーバで稼働するマッチングルームにWebSocketを利用して接続する。
+func ConnectMatchingRoom() (*websocket.Conn, error) {
+	jar, err := getJar()
+	if err != nil {
+		return nil, err
+	}
+	header := http.Header{}
+	for _, cookie := range jar.Cookies(baseEndpoint) {
+		header.Add("Cookie", fmt.Sprintf("%s", cookie))
+	}
+
+	wsconn, _ , err := websocket.DefaultDialer.Dial(matchingEndpoint.String(), header)
+	if err != nil {
+		return nil, err
+	}
+	return wsconn, nil
+}
+
+// シェルゲーサーバにプレイヤー名を登録する。
 func PostProfile(name string) error {
-	//id := uuid.New()
-	//profile := &model.Profile{ID: id.String(), Name: name}
-	profile := &model.Profile{Name: name}
+	id := uuid.New()
+	profile := &model.Profile{ID: id.String(), Name: name}
 	p, err := json.Marshal(profile)
 	if err != nil {
 		return err
 	}
-
-	request, err := http.NewRequest("POST", profileEndpoint.String(), bytes.NewBuffer(p))
-	if err != nil {
-		return err
-	}
-	request.Header.Set("Content-Type", "application/json; charset=UTF-8")
-
-	client, err := newClient()
-	if err != nil {
-		return err
-	}
-
-	resp, err := client.Do(request)
+	resp, err := http.Post(profileEndpoint.String(), "application/json", bytes.NewBuffer(p))
 	if err != nil {
 		return err
 	}
 	defer resp.Body.Close()
-	log.Println("response Status:", resp.Status)
+	body, err := ioutil.ReadAll(resp.Body)
+	if err != nil {
+		return err
+	}
+
+	if resp.StatusCode != 200 {
+		return fmt.Errorf("%s", body)
+	}
+	jar, err := getJar()
+	if err != nil {
+		return err
+	}
+	jar.SetCookies(baseEndpoint, resp.Cookies())
 	return nil
+}
+
+// シェルゲーサーバから対戦待ちユーザを取得する
+func GetMatchingPlayers() ([]*model.MatchingPlayer, error) {
+	resp, err := http.Get(playersEndpoint.String())
+	if err != nil {
+		return nil, err
+	}
+	defer resp.Body.Close()
+
+	body, err := ioutil.ReadAll(resp.Body)
+	if err != nil {
+		return nil, err
+	}
+
+	var players []*model.MatchingPlayer
+	if err := json.Unmarshal(body, &players); err != nil {
+		return nil, err
+	}
+	return players, nil
 }

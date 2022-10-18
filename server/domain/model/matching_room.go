@@ -47,7 +47,6 @@ func (mr *MatchingRoom) Run() {
 		select {
 		case player := <-mr.register:
 			log.Printf("[+] %s entered the room.\n", player.GetName())
-			mr.Players[player.GetID()] = player
 			for _, p := range mr.Players {
 				var msg = &MatchingMessage{
 					Source: player.Profile,
@@ -57,6 +56,7 @@ func (mr *MatchingRoom) Run() {
 				// 参加は全員に送信する
 				p.matchingChan <- msg
 			}
+			mr.Players[player.GetID()] = player
 		case player := <-mr.unregister:
 			log.Printf("[+] %s exited the room.\n", player.GetName())
 			if _, ok := mr.Players[player.GetID()]; ok {
