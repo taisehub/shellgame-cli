@@ -9,7 +9,6 @@ import (
 	"github.com/taise-hub/shellgame-cli/server/domain/model"
 	"github.com/taise-hub/shellgame-cli/server/usecase"
 	"net/http"
-	"sync"
 )
 
 const (
@@ -107,7 +106,8 @@ func (con *GameController) WaitMatch(w http.ResponseWriter, req *http.Request) {
 		return
 	}
 	sess, _ := store.Get(req, SESS_NAME)
-	player := model.NewMatchingPlayer(sess.Values["id"].(string), sess.Values["name"].(string), &WebsocketConn{conn, sync.Mutex{}})
+	wc := NewWebsocketConn(conn)
+	player := model.NewMatchingPlayer(sess.Values["id"].(string), sess.Values["name"].(string), wc)
 	con.usecase.WaitMatch(player)
 }
 
