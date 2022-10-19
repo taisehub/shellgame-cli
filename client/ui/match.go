@@ -66,6 +66,7 @@ func (mm matchModel) Update(msg tea.Msg) (tea.Model, tea.Cmd) {
 		go mm.matching()
 		return mm, nil
 	case MatchingMsg:
+		log.Printf("MatchingMsg: %+v\n", msg)
 	// 受け取ったメッセージによって処理を分ける
 	// 2. 対戦要求の受け取り
 	// 3. 対戦要求に対する返答(DENY or ACCEPT)
@@ -84,6 +85,7 @@ func (mm matchModel) Update(msg tea.Msg) (tea.Model, tea.Cmd) {
 		case "enter":
 			dest, _ := mm.list.SelectedItem().(Profile)
 			msg := &MatchingMsg{
+				Source: dest,
 				Dest: dest,
 				Data: common.OFFER,
 			}
@@ -141,7 +143,7 @@ func (mm matchModel) readPump() {
 		if err := mm.ReadConn(msg); err != nil {
 			return
 		}
-		p.Send(msg)
+		p.Send(*msg)
 	}
 }
 
