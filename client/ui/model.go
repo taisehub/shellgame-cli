@@ -1,9 +1,9 @@
 package ui
 
 import (
-	"log"
 	"github.com/charmbracelet/bubbles/list"
 	tea "github.com/charmbracelet/bubbletea"
+	"log"
 )
 
 type model struct {

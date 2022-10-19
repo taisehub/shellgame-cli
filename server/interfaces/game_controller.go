@@ -87,15 +87,15 @@ func (con *GameController) saveProfile(w http.ResponseWriter, req *http.Request)
 func (con *GameController) Match(w http.ResponseWriter, req *http.Request) {
 	switch req.Method {
 	case "GET":
-		con.getMatchPlayers(w, req)
+		con.getMatchingProfiles(w, req)
 	default:
 		http.NotFound(w, req)
 	}
 }
 
 // MatchingPlayerのProfileを返すようにしたい。
-func (con *GameController) getMatchPlayers(w http.ResponseWriter, req *http.Request) {
-	players := con.usecase.GetMatchingPlayers()
+func (con *GameController) getMatchingProfiles(w http.ResponseWriter, req *http.Request) {
+	players := con.usecase.GetMatchingProfiles()
 	RespondJSON(w, players, 200)
 }
 

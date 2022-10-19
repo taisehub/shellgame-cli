@@ -1,10 +1,10 @@
 package ui
 
 import (
-	"os/exec"
 	tea "github.com/charmbracelet/bubbletea"
 	shellgame "github.com/taise-hub/shellgame-cli/client"
 	"log"
+	"os/exec"
 )
 
 type shellFinishedMsg struct{ err error }
@@ -13,7 +13,7 @@ func ExecShell() tea.Cmd {
 	c := exec.Command("clear") // シェルゲーコンテナに入る前に画面をクリアする
 	return tea.Batch(tea.ExecProcess(c, func(err error) tea.Msg {
 		return shellFinishedMsg{err}
-	}),tea.Exec(&shellgame.Terminal{}, func(err error) tea.Msg {
+	}), tea.Exec(&shellgame.Terminal{}, func(err error) tea.Msg {
 		return shellFinishedMsg{err}
 	}))
 }

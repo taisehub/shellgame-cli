@@ -2,18 +2,19 @@ package usecase
 
 import (
 	"context"
-	"time"
+	"github.com/taise-hub/shellgame-cli/common"
 	"github.com/taise-hub/shellgame-cli/server/domain/model"
 	"github.com/taise-hub/shellgame-cli/server/domain/repository"
 	"github.com/taise-hub/shellgame-cli/server/domain/service"
 	"io"
 	"log"
 	"net"
+	"time"
 )
 
 type GameUsecase interface {
 	Start(net.Conn) error
-	GetMatchingPlayers() []*model.MatchingPlayer
+	GetMatchingProfiles() []*common.Profile
 	WaitMatch(*model.MatchingPlayer)
 }
 
@@ -43,9 +44,14 @@ func (gi *gameInteractor) Start(nconn net.Conn) (err error) {
 	return
 }
 
-func (gi *gameInteractor) GetMatchingPlayers() []*model.MatchingPlayer {
+func (gi *gameInteractor) GetMatchingProfiles() []*common.Profile {
 	mroom := model.GetMatchingRoom()
-	return mroom.GetMatchingPlayers()
+	players := mroom.GetMatchingPlayers()
+	var profiles []*common.Profile
+	for _, v := range players {
+		profiles = append(profiles, v.Profile)
+	}
+	return profiles
 }
 
 // playerをマッチング待ち状態にする。

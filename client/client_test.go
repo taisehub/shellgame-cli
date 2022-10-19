@@ -3,7 +3,7 @@ package shellgame
 import (
 	"encoding/json"
 	"fmt"
-	"github.com/taise-hub/shellgame-cli/server/domain/model"
+	"github.com/taise-hub/shellgame-cli/common"
 	"net/http"
 	"net/http/httptest"
 	"net/url"
@@ -13,7 +13,7 @@ import (
 func TestPostProfile(t *testing.T) {
 	//NOTE: APIのレスポンスの仕様が固ってないためとりあえずtext/plainを返す。
 	ts := httptest.NewServer(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
-		p := &model.Profile{}
+		p := &common.Profile{}
 		err := json.NewDecoder(r.Body).Decode(p)
 		if err != nil {
 			http.Error(w, err.Error(), http.StatusBadRequest)
@@ -68,20 +68,20 @@ func TestPostProfile(t *testing.T) {
 func TestGetPlayers(t *testing.T) {
 	//NOTE: APIのレスポンスの仕様が固ってないためとりあえずtext/plainを返す。
 	ts := httptest.NewServer(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
-		players := []*model.MatchingPlayer{
-			&model.MatchingPlayer{
-				Profile: &model.Profile{
+		players := []*common.MatchingPlayer{
+			{
+				Profile: &common.Profile{
 					ID:   "da3fc9dd-bff1-43ed-b360-91e4f4ee9db1",
 					Name: "Bob",
 				},
-				Status: model.WAITING,
+				Status: common.WAITING,
 			},
-			&model.MatchingPlayer{
-				Profile: &model.Profile{
+			{
+				Profile: &common.Profile{
 					ID:   "22166795-397e-4a16-ad7e-f63bc8cc9222",
 					Name: "Alice",
 				},
-				Status: model.WAITING,
+				Status: common.WAITING,
 			},
 		}
 

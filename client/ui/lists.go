@@ -4,6 +4,7 @@ import (
 	"fmt"
 	"github.com/charmbracelet/bubbles/list"
 	tea "github.com/charmbracelet/bubbletea"
+	"github.com/taise-hub/shellgame-cli/common"
 	"io"
 )
 
@@ -43,12 +44,7 @@ func (d screenDelegate) Render(w io.Writer, m list.Model, index int, listItem li
 	fmt.Fprintf(w, fn(str))
 }
 
-
-// 対戦相手の選択肢を扱うリスト
-type Profile struct {
-	ID   string `json:"id"` 
-	Name string `json:"name"`
-}
+type Profile common.Profile
 
 func (p Profile) FilterValue() string { return "" }
 
@@ -74,4 +70,3 @@ func (d profileDelegate) Render(w io.Writer, m list.Model, index int, listItem l
 
 	fmt.Fprintf(w, fn(str))
 }
-

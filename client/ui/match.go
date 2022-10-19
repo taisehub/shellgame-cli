@@ -1,13 +1,14 @@
 package ui
 
 import (
-	"log"
-	"time"
 	"github.com/charmbracelet/bubbles/list"
 	tea "github.com/charmbracelet/bubbletea"
 	"github.com/gorilla/websocket"
-	"sync"
 	shellgame "github.com/taise-hub/shellgame-cli/client"
+	"github.com/taise-hub/shellgame-cli/common"
+	"log"
+	"sync"
+	"time"
 )
 
 var muRead sync.Mutex
@@ -40,14 +41,14 @@ func (mm matchModel) Init() tea.Cmd {
 func (mm matchModel) Update(msg tea.Msg) (tea.Model, tea.Cmd) {
 	switch msg := msg.(type) {
 	case screenChangeMsg:
-		players, err := shellgame.GetMatchingPlayers()
+		ps, err := shellgame.GetMatchingProfiles()
 		if err != nil {
 			return matchModel{}, tea.Quit
 		}
 
 		var profiles []list.Item
-		for _, v := range players {
-			profiles = append(profiles, Profile{v.Profile.ID, v.Profile.Name})
+		for _, v := range ps {
+			profiles = append(profiles, Profile(*v))
 		}
 		mm.list.SetItems(profiles)
 
@@ -68,6 +69,7 @@ func (mm matchModel) Update(msg tea.Msg) (tea.Model, tea.Cmd) {
 	// 受け取ったメッセージによって処理を分ける
 	// 2. 対戦要求の受け取り
 	// 3. 対戦要求に対する返答(DENY or ACCEPT)
+
 	// case timeoutMsg: // 対戦要求に一定時間返答がない場合に受け取るメッセージ
 	case tea.KeyMsg:
 		switch keypress := msg.String(); keypress {
@@ -77,11 +79,13 @@ func (mm matchModel) Update(msg tea.Msg) (tea.Model, tea.Cmd) {
 		case "r":
 			//対戦待ちのユーザを取得し更新する。
 
+		case "t": // temporary ゲーム開始画面に接続する
+
 		case "enter":
-			// チャネルに書き込んで、writePump()にデータを流せばOK
 			dest, _ := mm.list.SelectedItem().(Profile)
 			msg := &MatchingMsg{
 				Dest: dest,
+				Data: common.OFFER,
 			}
 			mm.matchingChan <- msg
 			// 送信時に3分後にtimeoutMsgを通知する処理をgoroutineで動かす。
@@ -112,14 +116,14 @@ func (mm matchModel) writePump() {
 	defer mm.conn.Close()
 	for {
 		select {
-		case m, ok := <- mm.matchingChan:
+		case m, ok := <-mm.matchingChan:
 			if !ok {
 				return
 			}
 			if err := mm.WriteConn(m); err != nil {
 				return
 			}
-		case <- ticker.C:
+		case <-ticker.C:
 			if err := mm.conn.WriteMessage(websocket.PingMessage, nil); err != nil {
 				return
 			}
@@ -132,7 +136,7 @@ func (mm matchModel) readPump() {
 	defer mm.conn.Close()
 	p := GetProgram()
 	mm.conn.SetReadDeadline(time.Now().Add(60 * time.Second))
-	for { 
+	for {
 		msg := &MatchingMsg{}
 		if err := mm.ReadConn(msg); err != nil {
 			return

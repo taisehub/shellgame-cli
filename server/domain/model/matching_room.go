@@ -1,13 +1,14 @@
 package model
 
 import (
+	"github.com/taise-hub/shellgame-cli/common"
 	"log"
 )
 
 var (
 	matchingRoom *MatchingRoom = &MatchingRoom{
 		Players:    make(map[string]*MatchingPlayer),
-		message:    make(chan *MatchingMessage),
+		message:    make(chan *common.MatchingMessage),
 		register:   make(chan *MatchingPlayer),
 		unregister: make(chan *MatchingPlayer),
 	}
@@ -17,7 +18,7 @@ var (
 // 対戦待ち状態の管理を行う。
 type MatchingRoom struct {
 	Players    map[string]*MatchingPlayer // 誰がMatchigRoomにいるのか把握するために利用。
-	message    chan *MatchingMessage
+	message    chan *common.MatchingMessage
 	register   chan *MatchingPlayer
 	unregister chan *MatchingPlayer
 }
@@ -48,10 +49,10 @@ func (mr *MatchingRoom) Run() {
 		case player := <-mr.register:
 			log.Printf("[+] %s entered the room.\n", player.GetName())
 			for _, p := range mr.Players {
-				var msg = &MatchingMessage{
-					Source: player.Profile,
+				var msg = &common.MatchingMessage{
+					Source: player.GetProfile(),
 					Dest:   nil,
-					Data:   JOIN,
+					Data:   common.JOIN,
 				}
 				// 参加は全員に送信する
 				p.matchingChan <- msg
@@ -64,35 +65,35 @@ func (mr *MatchingRoom) Run() {
 				delete(mr.Players, player.GetID())
 			}
 			for _, p := range mr.Players {
-				var msg = &MatchingMessage{
-					Source: player.Profile,
+				var msg = &common.MatchingMessage{
+					Source: player.GetProfile(),
 					Dest:   nil,
-					Data:   LEAVE,
+					Data:   common.LEAVE,
 				}
 				// 退室は全員に送信する
 				p.matchingChan <- msg
 			}
 		case msg := <-mr.message:
 			switch msg.Data {
-			case OFFER:
+			case common.OFFER:
 				log.Printf("[+] OFFER: %s to %s\n", mr.Players[msg.Source.ID].GetName(), mr.Players[msg.Dest.ID].GetName())
 				mr.HandleOffer(msg)
 				mr.Players[msg.Dest.ID].matchingChan <- msg
-			case CANCEL_OFFER:
+			case common.CANCEL_OFFER:
 				log.Printf("[+] CANCEL OFFER: %s to %s\n", mr.Players[msg.Source.ID].GetName(), mr.Players[msg.Dest.ID].GetName())
 				mr.HandleCancelOffer(msg)
 				mr.Players[msg.Dest.ID].matchingChan <- msg
-			case ACCEPT:
+			case common.ACCEPT:
 				log.Printf("[+] ACCEPT OFFER: %s to %s\n", mr.Players[msg.Source.ID].GetName(), mr.Players[msg.Dest.ID].GetName())
 				mr.HandleAccept(msg)
 				mr.Players[msg.Source.ID].matchingChan <- msg
 				mr.Players[msg.Dest.ID].matchingChan <- msg
-			case DENY:
+			case common.DENY:
 				log.Printf("[+] DENY OFFER: %s to %s\n", mr.Players[msg.Source.ID].GetName(), mr.Players[msg.Dest.ID].GetName())
 				mr.HandleDeny(msg)
 				mr.Players[msg.Dest.ID].matchingChan <- msg
 			default:
-				err := &MatchingMessage{Data: ERROR}
+				err := &common.MatchingMessage{Data: common.ERROR}
 				mr.Players[msg.Source.ID].matchingChan <- err
 			}
 		}
@@ -101,58 +102,58 @@ func (mr *MatchingRoom) Run() {
 
 // 申請のハンドリング
 // 申請者と承諾者のステータスが共にWAITINGであること確認し、両者のステータスをNEGOTIATINGにする。
-func (mr *MatchingRoom) HandleOffer(msg *MatchingMessage) {
+func (mr *MatchingRoom) HandleOffer(msg *common.MatchingMessage) {
 	// 受信者がRoomにいることを確認
 	_, ok := mr.Players[msg.Dest.ID]
 	if !ok {
-		err := &MatchingMessage{Data: ERROR}
+		err := &common.MatchingMessage{Data: common.ERROR}
 		mr.Players[msg.Source.ID].matchingChan <- err
 		return
 	}
 
-	if mr.Players[msg.Source.ID].Status == NEGOTIATING || mr.Players[msg.Dest.ID].Status == NEGOTIATING {
-		err := &MatchingMessage{Data: ERROR}
+	if mr.Players[msg.Source.ID].GetStatus() == NEGOTIATING || mr.Players[msg.Dest.ID].GetStatus() == NEGOTIATING {
+		err := &common.MatchingMessage{Data: common.ERROR}
 		mr.Players[msg.Source.ID].matchingChan <- err
 		return
 	}
 
-	mr.Players[msg.Source.ID].Status = NEGOTIATING
-	mr.Players[msg.Dest.ID].Status = NEGOTIATING
+	mr.Players[msg.Source.ID].SetStatus(NEGOTIATING)
+	mr.Players[msg.Dest.ID].SetStatus(NEGOTIATING)
 }
 
 // 申請キャンセルのハンドリング
 // 申請者と承諾者のステータスが共にNEGITIATINGであること確認し、両者のステータスをWAITINGにする。
-func (mr *MatchingRoom) HandleCancelOffer(msg *MatchingMessage) {
+func (mr *MatchingRoom) HandleCancelOffer(msg *common.MatchingMessage) {
 	_, ok := mr.Players[msg.Dest.ID]
 	if !ok {
-		err := &MatchingMessage{Data: ERROR}
+		err := &common.MatchingMessage{Data: common.ERROR}
 		mr.Players[msg.Source.ID].matchingChan <- err
 		return
 	}
 
 	// FIXME: 交渉中でないPlayerを宛先にしてMessageを送信することで交渉解除することが可能。
-	if mr.Players[msg.Source.ID].Status == WAITING || mr.Players[msg.Dest.ID].Status == WAITING {
-		err := &MatchingMessage{Data: ERROR}
+	if mr.Players[msg.Source.ID].GetStatus() == WAITING || mr.Players[msg.Dest.ID].GetStatus() == WAITING {
+		err := &common.MatchingMessage{Data: common.ERROR}
 		mr.Players[msg.Source.ID].matchingChan <- err
 		return
 	}
 
-	mr.Players[msg.Source.ID].Status = WAITING
-	mr.Players[msg.Dest.ID].Status = WAITING
+	mr.Players[msg.Source.ID].SetStatus(WAITING)
+	mr.Players[msg.Dest.ID].SetStatus(WAITING)
 }
 
 // 申請に対する承諾のハンドリング
 // 申請者と承諾者のステータスが共にNEGITIATINGであること確認する。
-func (mr *MatchingRoom) HandleAccept(msg *MatchingMessage) {
+func (mr *MatchingRoom) HandleAccept(msg *common.MatchingMessage) {
 	_, ok := mr.Players[msg.Dest.ID]
 	if !ok {
-		err := &MatchingMessage{Data: ERROR}
+		err := &common.MatchingMessage{Data: common.ERROR}
 		mr.Players[msg.Source.ID].matchingChan <- err
 		return
 	}
 
-	if mr.Players[msg.Source.ID].Status == WAITING || mr.Players[msg.Dest.ID].Status == WAITING {
-		err := &MatchingMessage{Data: ERROR}
+	if mr.Players[msg.Source.ID].GetStatus() == WAITING || mr.Players[msg.Dest.ID].GetStatus() == WAITING {
+		err := &common.MatchingMessage{Data: common.ERROR}
 		mr.Players[msg.Source.ID].matchingChan <- err
 		return
 	}
@@ -160,22 +161,22 @@ func (mr *MatchingRoom) HandleAccept(msg *MatchingMessage) {
 
 // 申請に対する不承諾のハンドリング
 // 申請者と承諾者のステータスが共にNEGITIATINGであること確認する。
-func (mr *MatchingRoom) HandleDeny(msg *MatchingMessage) {
+func (mr *MatchingRoom) HandleDeny(msg *common.MatchingMessage) {
 	//  以下の条件を満たす場合、申請者に対してマッチングが成立しなかったことを通達し、申請者と承認者のMatchingStateをWAITINGにする。
 	_, ok := mr.Players[msg.Dest.ID]
 	if !ok {
-		err := &MatchingMessage{Data: ERROR}
+		err := &common.MatchingMessage{Data: common.ERROR}
 		mr.Players[msg.Source.ID].matchingChan <- err
 		return
 	}
 
 	// FIXME: 交渉中でないPlayerを宛先にしてMessageを送信することで交渉解除することが可能。
-	if mr.Players[msg.Source.ID].Status == WAITING || mr.Players[msg.Dest.ID].Status == WAITING {
-		err := &MatchingMessage{Data: ERROR}
+	if mr.Players[msg.Source.ID].GetStatus() == WAITING || mr.Players[msg.Dest.ID].GetStatus() == WAITING {
+		err := &common.MatchingMessage{Data: common.ERROR}
 		mr.Players[msg.Source.ID].matchingChan <- err
 		return
 	}
 
-	mr.Players[msg.Source.ID].Status = WAITING
-	mr.Players[msg.Dest.ID].Status = WAITING
+	mr.Players[msg.Source.ID].SetStatus(WAITING)
+	mr.Players[msg.Dest.ID].SetStatus(WAITING)
 }

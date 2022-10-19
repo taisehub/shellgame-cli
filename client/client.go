@@ -6,7 +6,7 @@ import (
 	"fmt"
 	"github.com/google/uuid"
 	"github.com/gorilla/websocket"
-	"github.com/taise-hub/shellgame-cli/server/domain/model"
+	"github.com/taise-hub/shellgame-cli/common"
 	"io/ioutil"
 	"net/http"
 	"net/url"
@@ -19,7 +19,7 @@ const (
 var (
 	baseEndpoint     = &url.URL{Scheme: "http", Host: HOST, Path: "/"}
 	profileEndpoint  = &url.URL{Scheme: "http", Host: HOST, Path: "/profiles"}
-	playersEndpoint = &url.URL{Scheme: "http", Host: HOST, Path: "/players"}
+	playersEndpoint  = &url.URL{Scheme: "http", Host: HOST, Path: "/players"}
 	shellEndpoint    = &url.URL{Scheme: "ws", Host: HOST, Path: "/shell"}
 	matchingEndpoint = &url.URL{Scheme: "ws", Host: HOST, Path: "/waitmatch"}
 )
@@ -53,7 +53,7 @@ func ConnectMatchingRoom() (*websocket.Conn, error) {
 		header.Add("Cookie", fmt.Sprintf("%s", cookie))
 	}
 
-	wsconn, _ , err := websocket.DefaultDialer.Dial(matchingEndpoint.String(), header)
+	wsconn, _, err := websocket.DefaultDialer.Dial(matchingEndpoint.String(), header)
 	if err != nil {
 		return nil, err
 	}
@@ -63,7 +63,7 @@ func ConnectMatchingRoom() (*websocket.Conn, error) {
 // シェルゲーサーバにプレイヤー名を登録する。
 func PostProfile(name string) error {
 	id := uuid.New()
-	profile := &model.Profile{ID: id.String(), Name: name}
+	profile := &common.Profile{ID: id.String(), Name: name}
 	p, err := json.Marshal(profile)
 	if err != nil {
 		return err
@@ -90,7 +90,7 @@ func PostProfile(name string) error {
 }
 
 // シェルゲーサーバから対戦待ちユーザを取得する
-func GetMatchingPlayers() ([]*model.MatchingPlayer, error) {
+func GetMatchingProfiles() ([]*common.Profile, error) {
 	resp, err := http.Get(playersEndpoint.String())
 	if err != nil {
 		return nil, err
@@ -102,9 +102,9 @@ func GetMatchingPlayers() ([]*model.MatchingPlayer, error) {
 		return nil, err
 	}
 
-	var players []*model.MatchingPlayer
-	if err := json.Unmarshal(body, &players); err != nil {
+	var profiles []*common.Profile
+	if err := json.Unmarshal(body, &profiles); err != nil {
 		return nil, err
 	}
-	return players, nil
+	return profiles, nil
 }

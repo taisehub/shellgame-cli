@@ -9,7 +9,7 @@ var (
 	width        = 0
 	defaultWidth = 140
 
-	baseStyle 			= lipgloss.NewStyle().Margin().Padding()
+	baseStyle         = lipgloss.NewStyle().Margin().Padding()
 	titleStyle        = baseStyle.Copy().Bold(true).Foreground(lipgloss.Color("46"))
 	itemStyle         = baseStyle.Copy().Margin().Padding()
 	selectedItemStyle = baseStyle.Copy().Foreground(lipgloss.Color("41"))
