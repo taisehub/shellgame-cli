@@ -34,13 +34,7 @@ func NewWebsocketConn(conn *websocket.Conn) *WebsocketConn {
 	return &WebsocketConn{conn, sync.Mutex{}, sync.Mutex{}}
 }
 
-// コネクションをcloseする前にCloseを通知するメッセージを送信することにする。
-// shellgame-clientの実装によっては不要になる可能性あり。
 func (wc *WebsocketConn) Close() error {
-	mu := sync.Mutex{}
-	defer mu.Unlock()
-	mu.Lock()
-	wc.WriteMessage(websocket.CloseMessage, []byte{})
 	return wc.Conn.Close()
 }
 
