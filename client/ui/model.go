@@ -6,16 +6,21 @@ import (
 	"log"
 )
 
-type model struct {
-	screen  string
+type topModel struct {
+	screen  screen
 	screens list.Model
 	match   matchModel
 	help    helpModel
 }
 
-func NewModel() model {
-	var m model
+func NewModel() topModel {
+	var m topModel
 
+	screens := []list.Item{
+		screen("対戦"),
+		screen("終了"),
+		screen("ヘルプ"),
+	}
 	s := list.New(screens, screenDelegate{}, width, 14)
 	s.Title = "シェルゲー"
 	s.Styles.Title = titleStyle
@@ -38,54 +43,54 @@ func NewModel() model {
 	return m
 }
 
-func (m model) Init() tea.Cmd {
+func (m topModel) Init() tea.Cmd {
 	return tea.Batch(m.match.Init())
 }
 
-func (m model) Update(msg tea.Msg) (tea.Model, tea.Cmd) {
-	switch m.screen {
+func (tm topModel) Update(msg tea.Msg) (tea.Model, tea.Cmd) {
+	switch tm.screen {
 	case "対戦":
-		return m.match.Update(msg)
+		return tm.match.Update(msg)
 	case "ヘルプ":
-		return m.help.Update(msg, m)
+		return tm.help.Update(msg, tm)
 	default:
-		return updateTop(msg, m)
+		return updateTop(msg, tm)
 	}
 }
 
-func (m model) View() string {
-	switch m.screen {
+func (tm topModel) View() string {
+	switch tm.screen {
 	case "対戦":
-		return m.match.View()
+		return tm.match.View()
 	case "ヘルプ":
-		return m.help.View()
+		return tm.help.View()
 	default:
-		return "\n" + m.screens.View()
+		return "\n" + tm.screens.View()
 	}
 }
 
-func updateTop(msg tea.Msg, m model) (tea.Model, tea.Cmd) {
+func updateTop(msg tea.Msg, tm topModel) (tea.Model, tea.Cmd) {
 	switch msg := msg.(type) {
 	case screenChangeMsg:
 	case tea.KeyMsg:
 		switch msg.String() {
 		case "q": // TOP画面に戻る
-			return m, nil
+			return tm, nil
 		case "ctrl+c": // プログラムの終了
-			return m, tea.Quit
+			return tm, tea.Quit
 		case "enter": // 画面遷移の実行
-			i, ok := m.screens.SelectedItem().(screen)
+			i, ok := tm.screens.SelectedItem().(screen)
 			if !ok {
-				return m, nil
+				return tm, nil
 			}
-			m.screen = string(i)
-			if m.screen == "終了" {
-				return m, tea.Quit
+			tm.screen = screen(i)
+			if tm.screen == "終了" {
+				return tm, tea.Quit
 			}
-			return m, screenChange()
+			return tm, screenChange("top")
 		}
 	}
 	var cmd tea.Cmd
-	m.screens, cmd = m.screens.Update(msg)
-	return m, cmd
+	tm.screens, cmd = tm.screens.Update(msg)
+	return tm, cmd
 }

@@ -16,19 +16,19 @@ func NewHelpModel() helpModel {
 	}
 }
 
-func (h helpModel) Update(msg tea.Msg, m model) (tea.Model, tea.Cmd) {
+func (hm helpModel) Update(msg tea.Msg, tm topModel) (tea.Model, tea.Cmd) {
 	switch msg := msg.(type) {
 	case screenChangeMsg:
 	case tea.KeyMsg:
 		switch msg.String() {
 		case "q":
-			m.screen = ""
-			return m, screenChange()
+			tm.screen = ""
+			return tm, screenChange("help")
 		case "ctrl+c":
-			return m, tea.Quit
+			return tm, tea.Quit
 		}
 	}
-	return m, nil
+	return tm, nil
 }
 
 func (m helpModel) View() string {

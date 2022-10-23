@@ -16,8 +16,9 @@ var muWrite sync.Mutex
 
 type matchModel struct {
 	list         list.Model
-	parent       *model
-	waiting      bool
+	parent       *topModel
+	screen       screen
+	choice		 choiceModel
 	conn         *websocket.Conn
 	matchingChan chan *MatchingMsg
 }
@@ -31,7 +32,9 @@ func NewMatchModel() (matchModel, error) {
 	l.SetShowHelp(false)
 	mc := make(chan *MatchingMsg)
 
-	return matchModel{list: l, waiting: false, matchingChan: mc}, nil
+	choice := NewChoiceModel()
+
+	return matchModel{list: l, screen: "", choice: choice, matchingChan: mc}, nil
 }
 
 func (mm matchModel) Init() tea.Cmd {
@@ -39,13 +42,71 @@ func (mm matchModel) Init() tea.Cmd {
 }
 
 func (mm matchModel) Update(msg tea.Msg) (tea.Model, tea.Cmd) {
+	switch mm.screen {
+	case "choice":
+		return mm.choice.Update(msg, mm)
+	default:
+		return mm.update(msg)
+	}
+}
+
+func (mm matchModel) update(msg tea.Msg) (tea.Model, tea.Cmd) {
 	switch msg := msg.(type) {
 	case screenChangeMsg:
+		return mm.screenChangeHandler(msg)
+	case MatchingMsg:
+		return mm.matchingMsgHandler(msg)
+	// case timeoutMsg: // 対戦要求に一定時間返答がない場合に受け取るメッセージ
+	case tea.KeyMsg:
+		switch keypress := msg.String(); keypress {
+		case "ctrl+c":
+			return mm, tea.Quit
+		case "enter":
+			dest, _ := mm.list.SelectedItem().(Profile)
+			if dest.ID == "" {
+				return mm, nil
+			}
+			msg := &MatchingMsg{
+				Source: dest,
+				Dest: dest,
+				Data: common.OFFER,
+			}
+			mm.matchingChan <- msg
+			// mm.screen = "choice"
+			// 送信時に3分後にtimeoutMsgを通知する処理をgoroutineで動かす。
+			// 送信後、matchModelの状態をwaitとかにしてローディング画面でも表示しとく？
+			return mm, nil
+		case "q":
+			mm.conn.Close()
+			return mm.parent, screenChange("match")
+		}
+	}
+	var cmd tea.Cmd
+	mm.list, cmd = mm.list.Update(msg)
+	return mm, cmd
+}
+
+func (mm matchModel) View() string {
+	switch mm.screen  {
+	case "choice":
+		return mm.choice.View()
+	default:
+		return "\n" + mm.list.View()
+	}
+}
+
+func (mm matchModel) matching() {
+	go mm.readPump()
+	mm.writePump()
+}
+
+func (mm matchModel) screenChangeHandler(msg screenChangeMsg) (tea.Model, tea.Cmd) {
+	switch msg {
+	case "top": // TOP画面からの遷移。現在対戦待ちのPlayerを取得し、webosocketでコネクションを生成する。
 		ps, err := shellgame.GetMatchingProfiles()
 		if err != nil {
 			return matchModel{}, tea.Quit
 		}
-
 		var profiles []list.Item
 		for _, v := range ps {
 			profiles = append(profiles, Profile(*v))
@@ -65,51 +126,57 @@ func (mm matchModel) Update(msg tea.Msg) (tea.Model, tea.Cmd) {
 		mm.conn.SetPongHandler(func(string) error { mm.conn.SetReadDeadline(time.Now().Add(60 * time.Second)); return nil })
 		go mm.matching()
 		return mm, nil
-	case MatchingMsg:
-		log.Printf("MatchingMsg: %+v\n", msg)
-	// 受け取ったメッセージによって処理を分ける
-	// 2. 対戦要求の受け取り
-	// 3. 対戦要求に対する返答(DENY or ACCEPT)
-
-	// case timeoutMsg: // 対戦要求に一定時間返答がない場合に受け取るメッセージ
-	case tea.KeyMsg:
-		switch keypress := msg.String(); keypress {
-		case "ctrl+c":
-			return mm, tea.Quit
-
-		case "r":
-			//対戦待ちのユーザを取得し更新する。
-
-		case "t": // temporary ゲーム開始画面に接続する
-
-		case "enter":
-			dest, _ := mm.list.SelectedItem().(Profile)
-			msg := &MatchingMsg{
-				Source: dest,
-				Dest: dest,
-				Data: common.OFFER,
-			}
-			mm.matchingChan <- msg
-			// 送信時に3分後にtimeoutMsgを通知する処理をgoroutineで動かす。
-			// 送信後、matchModelの状態をwaitとかにしてローディング画面でも表示しとく？
-			return mm, nil
-		case "q":
-			mm.conn.Close()
-			return mm.parent, screenChange()
+	case "choice": // 対戦要求などの回答画面からの遷移。現在対戦待ちのPlayerを更新する。
+		ps, err := shellgame.GetMatchingProfiles()
+		if err != nil {
+			return matchModel{}, tea.Quit
 		}
+		var profiles []list.Item
+		for _, v := range ps {
+			// TODO: 自分を除いて表示する
+			profiles = append(profiles, Profile(*v))
+		}
+		mm.list.SetItems(profiles)
+
+		return mm, nil
 	}
-	var cmd tea.Cmd
-	mm.list, cmd = mm.list.Update(msg)
-	return mm, cmd
+	return mm, nil
 }
 
-func (mm matchModel) View() string {
-	return "\n" + mm.list.View()
-}
-
-func (mm matchModel) matching() {
-	go mm.readPump()
-	mm.writePump()
+func (mm matchModel) matchingMsgHandler(msg MatchingMsg) (tea.Model, tea.Cmd) {
+	switch msg.Data {
+	case common.OFFER:
+		mm.screen = "choice"
+		return mm, screenChange("match")
+	case common.CANCEL_OFFER:
+	case common.ACCEPT:
+	case common.DENY:
+	case common.ERROR:
+	case common.JOIN:
+		i := 0
+		for _, v := range mm.list.Items() {
+			if v == nil {
+				return mm, nil
+			}
+			if v.(Profile).ID == msg.Source.ID {
+				return mm, nil
+			}
+			i ++
+		}
+		mm.list.InsertItem(i, msg.Source)
+		return mm, nil
+	case common.LEAVE:
+		for i, v := range mm.list.Items() {
+			if v == nil {
+				return mm, nil
+			}
+			if v.(Profile).ID == msg.Source.ID {
+				 mm.list.RemoveItem(i)
+			}
+		}
+		return mm, nil
+	}
+	return mm, nil
 }
 
 // mm.Update()から受け取ったメッセージをwebsocketに流す。

@@ -9,11 +9,11 @@ type errMsg struct{ err error }
 func (e errMsg) Error() string { return e.err.Error() }
 
 // 対戦、終了、ヘルプ等の画面切り替えを通知するメッセージ
-type screenChangeMsg struct{}
+type screenChangeMsg string
 
-func screenChange() tea.Cmd {
+func screenChange(from screenChangeMsg) tea.Cmd {
 	return func() tea.Msg {
-		return screenChangeMsg{}
+		return from
 	}
 }
 

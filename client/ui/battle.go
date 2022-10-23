@@ -26,28 +26,28 @@ func NewBattleModel() battleModel {
 	return battleModel{}
 }
 
-func (bm battleModel) Update(msg tea.Msg, m model) (tea.Model, tea.Cmd) {
+func (bm battleModel) Update(msg tea.Msg, tm topModel) (tea.Model, tea.Cmd) {
 	switch msg := msg.(type) {
 	case screenChangeMsg:
 		// 問題と自分と対戦相手のスコアを取ってくる。
-		return m, nil
+		return tm, nil
 	case tea.KeyMsg:
 		switch msg.String() {
 		case "enter":
-			return m, ExecShell()
+			return tm, ExecShell()
 		case "ctrl+c":
-			return m, tea.Quit
+			return tm, tea.Quit
 		case "q":
-			m.screen = ""
-			return m, screenChange()
+			tm.screen = ""
+			return tm, screenChange("root")
 		}
 	case shellFinishedMsg:
 		if msg.err != nil {
 			bm.err = msg.err
-			return m, tea.Quit
+			return tm, tea.Quit
 		}
 	}
-	return m, nil
+	return tm, nil
 }
 
 func (m battleModel) View() string {

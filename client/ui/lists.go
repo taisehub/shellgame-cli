@@ -8,14 +8,6 @@ import (
 	"io"
 )
 
-var (
-	screens = []list.Item{
-		screen("対戦"),
-		screen("終了"),
-		screen("ヘルプ"),
-	}
-)
-
 // TOP画面表示時の選択肢を扱うリスト
 type screen string
 
