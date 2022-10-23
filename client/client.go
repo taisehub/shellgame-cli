@@ -88,6 +88,7 @@ func ConnectMatchingRoom() (*websocket.Conn, error) {
 func PostProfile(name string) error {
 	id := uuid.New()
 	profile := &common.Profile{ID: id.String(), Name: name}
+	SetMyProfile(profile)
 	p, err := json.Marshal(profile)
 	if err != nil {
 		return err

@@ -61,8 +61,9 @@ func (mm matchModel) update(msg tea.Msg) (tea.Model, tea.Cmd) {
 			if dest.ID == "" {
 				return mm, nil
 			}
+			src := Profile(*shellgame.GetMyProfile())
 			msg := &MatchingMsg{
-				Source: dest,
+				Source: src,
 				Dest:   dest,
 				Data:   common.OFFER,
 			}
