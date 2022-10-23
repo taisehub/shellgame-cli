@@ -10,6 +10,8 @@ import (
 	"io/ioutil"
 	"net/http"
 	"net/url"
+	"sync"
+	"time"
 )
 
 const (
@@ -22,7 +24,22 @@ var (
 	playersEndpoint  = &url.URL{Scheme: "http", Host: HOST, Path: "/players"}
 	shellEndpoint    = &url.URL{Scheme: "ws", Host: HOST, Path: "/shell"}
 	matchingEndpoint = &url.URL{Scheme: "ws", Host: HOST, Path: "/waitmatch"}
+	muRead           sync.Mutex
+	muWrite          sync.Mutex
 )
+
+func WriteConn(conn *websocket.Conn, msg common.Message) error {
+	defer muWrite.Unlock()
+	muWrite.Lock()
+	conn.SetWriteDeadline(time.Now().Add(10 * time.Second))
+	return conn.WriteJSON(msg)
+}
+
+func ReadConn(conn *websocket.Conn, msg common.Message) error {
+	defer muRead.Unlock()
+	muRead.Lock()
+	return conn.ReadJSON(msg)
+}
 
 // シェルゲーサーバで稼働するコンテナにWebSocketを利用して接続する。
 func ConnectShell() (*websocket.Conn, error) {
@@ -39,6 +56,8 @@ func ConnectShell() (*websocket.Conn, error) {
 	if err != nil {
 		return nil, err
 	}
+	wsconn.SetReadDeadline(time.Now().Add(60 * time.Second))
+	wsconn.SetPongHandler(func(string) error { wsconn.SetReadDeadline(time.Now().Add(60 * time.Second)); return nil })
 	return wsconn, nil
 }
 
