@@ -51,7 +51,7 @@ func (d profileDelegate) Render(w io.Writer, m list.Model, index int, listItem l
 		return
 	}
 
-	str := fmt.Sprintf("* %s", i)
+	str := fmt.Sprintf("* %s", i.Name)
 
 	fn := itemStyle.Render
 	if index == m.Index() {

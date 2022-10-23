@@ -13,7 +13,7 @@ type topModel struct {
 	help    helpModel
 }
 
-func NewModel() topModel {
+func NewTopModel() topModel {
 	var m topModel
 
 	screens := []list.Item{

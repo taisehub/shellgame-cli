@@ -103,11 +103,6 @@ func (mm matchModel) screenChangeHandler(msg screenChangeMsg) (tea.Model, tea.Cm
 		}
 		mm.list.SetItems(profiles)
 
-		// FIXME: 後で消す
-		if err = shellgame.PostProfile("hoge"); err != nil {
-			return matchModel{}, tea.Quit
-		}
-
 		conn, err := shellgame.ConnectMatchingRoom()
 		if err != nil {
 			log.Fatalf("%v\n", err.Error())
