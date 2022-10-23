@@ -6,7 +6,6 @@ import (
 	"github.com/gorilla/websocket"
 	shellgame "github.com/taise-hub/shellgame-cli/client"
 	"github.com/taise-hub/shellgame-cli/common"
-	"log"
 	"time"
 )
 
@@ -93,34 +92,18 @@ func (mm matchModel) View() string {
 func (mm matchModel) screenChangeHandler(msg screenChangeMsg) (tea.Model, tea.Cmd) {
 	switch msg {
 	case "top": // TOP画面からの遷移。現在対戦待ちのPlayerを取得し、webosocketでコネクションを生成する。
-		ps, err := shellgame.GetMatchingProfiles()
-		if err != nil {
+		if err := mm.updateProfiles(); err != nil {
 			return matchModel{}, tea.Quit
 		}
-		var profiles []list.Item
-		for _, v := range ps {
-			profiles = append(profiles, Profile(*v))
+		if err := mm.createConn(); err != nil {
+			return matchModel{}, tea.Quit
 		}
-		mm.list.SetItems(profiles)
-
-		conn, err := shellgame.ConnectMatchingRoom()
-		if err != nil {
-			log.Fatalf("%v\n", err.Error())
-		}
-		mm.conn = conn
 		go mm.matching()
 		return mm, nil
 	case "choice": // 対戦要求などの回答画面からの遷移。現在対戦待ちのPlayerを更新する。
-		ps, err := shellgame.GetMatchingProfiles()
-		if err != nil {
+		if err := mm.updateProfiles(); err != nil {
 			return matchModel{}, tea.Quit
 		}
-		var profiles []list.Item
-		for _, v := range ps {
-			profiles = append(profiles, Profile(*v))
-		}
-		mm.list.SetItems(profiles)
-
 		return mm, nil
 	}
 	return mm, nil
@@ -136,30 +119,60 @@ func (mm matchModel) matchingMsgHandler(msg MatchingMsg) (tea.Model, tea.Cmd) {
 	case common.DENY:
 	case common.ERROR:
 	case common.JOIN:
-		i := 0
-		for _, v := range mm.list.Items() {
-			if v == nil {
-				return mm, nil
-			}
-			if v.(Profile).ID == msg.Source.ID {
-				return mm, nil
-			}
-			i++
-		}
-		mm.list.InsertItem(i, msg.Source)
+		mm.appendProfile(msg.Source)
 		return mm, nil
 	case common.LEAVE:
-		for i, v := range mm.list.Items() {
-			if v == nil {
-				return mm, nil
-			}
-			if v.(Profile).ID == msg.Source.ID {
-				mm.list.RemoveItem(i)
-			}
-		}
+		mm.removeProfile(msg.Source)
 		return mm, nil
 	}
 	return mm, nil
+}
+
+func (mm *matchModel) appendProfile(p Profile) {
+	i := 0
+	for _, v := range mm.list.Items() {
+		if v == nil {
+			return
+		}
+		if v.(Profile).ID == p.ID {
+			return
+		}
+		i++
+	}
+	mm.list.InsertItem(i, p)
+}
+
+func (mm *matchModel) removeProfile(p Profile) {
+	for i, v := range mm.list.Items() {
+		if v == nil {
+			return
+		}
+		if v.(Profile).ID == p.ID {
+			mm.list.RemoveItem(i)
+		}
+	}
+}
+
+func (mm *matchModel) updateProfiles() error {
+	ps, err := shellgame.GetMatchingProfiles()
+	if err != nil {
+		return err
+	}
+	var profiles []list.Item
+	for _, v := range ps {
+		profiles = append(profiles, Profile(*v))
+	}
+	mm.list.SetItems(profiles)
+	return nil
+}
+
+func (mm *matchModel) createConn() error {
+	conn, err := shellgame.ConnectMatchingRoom()
+	if err != nil {
+		return err
+	}
+	mm.conn = conn
+	return nil
 }
 
 func (mm matchModel) matching() {
