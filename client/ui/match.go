@@ -117,7 +117,6 @@ func (mm matchModel) screenChangeHandler(msg screenChangeMsg) (tea.Model, tea.Cm
 		}
 		var profiles []list.Item
 		for _, v := range ps {
-			// TODO: 自分を除いて表示する
 			profiles = append(profiles, Profile(*v))
 		}
 		mm.list.SetItems(profiles)

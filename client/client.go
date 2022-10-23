@@ -110,7 +110,17 @@ func PostProfile(name string) error {
 
 // シェルゲーサーバから対戦待ちユーザを取得する
 func GetMatchingProfiles() ([]*common.Profile, error) {
-	resp, err := http.Get(playersEndpoint.String())
+	client := &http.Client{ }
+	req, err := http.NewRequest("GET", playersEndpoint.String(), nil)
+	if err != nil {
+		return nil, err
+	}
+	header := http.Header{}
+	for _, cookie := range jar.Cookies(baseEndpoint) {
+		header.Add("Cookie", fmt.Sprintf("%s", cookie))
+	}
+	req.Header = header
+	resp, err := client.Do(req)
 	if err != nil {
 		return nil, err
 	}
