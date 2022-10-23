@@ -1,16 +1,17 @@
 package ui
 
 import (
-	"log"
 	"fmt"
+	"github.com/charmbracelet/bubbles/textinput"
 	tea "github.com/charmbracelet/bubbletea"
 	shellgame "github.com/taise-hub/shellgame-cli/client"
-	"github.com/charmbracelet/bubbles/textinput"
+	"log"
 )
 
 // initModelはゲーム開始時にユーザ名を登録する画面の実装
 type initModel struct {
 	textInput textinput.Model
+	top       *topModel
 }
 
 func NewInitModel() initModel {
@@ -18,9 +19,11 @@ func NewInitModel() initModel {
 	ti.CharLimit = 156
 	ti.Width = 20
 	ti.Focus()
+	tm := NewTopModel()
 
 	return initModel{
 		textInput: ti,
+		top:       &tm,
 	}
 }
 
@@ -40,8 +43,7 @@ func (im initModel) Update(msg tea.Msg) (tea.Model, tea.Cmd) {
 			if err := shellgame.PostProfile(im.textInput.Value()); err != nil {
 				log.Fatalf("%v\n", err.Error())
 			}
-			tm := NewTopModel()
-			return tm, screenChange("init")
+			return im.top, screenChange("init")
 		}
 	}
 	im.textInput, cmd = im.textInput.Update(msg)
