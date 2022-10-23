@@ -14,6 +14,7 @@ type matchModel struct {
 	parent       *topModel
 	screen       screen
 	choice       choiceModel
+	wait         waitModel
 	conn         *websocket.Conn
 	matchingChan chan *MatchingMsg
 }
@@ -28,8 +29,9 @@ func NewMatchModel() (matchModel, error) {
 	mc := make(chan *MatchingMsg)
 
 	choice := NewChoiceModel()
+	wait := NewWaitModel()
 
-	return matchModel{list: l, screen: "", choice: choice, matchingChan: mc}, nil
+	return matchModel{list: l, screen: "", choice: choice, wait: wait, matchingChan: mc}, nil
 }
 
 func (mm matchModel) Init() tea.Cmd {
@@ -40,6 +42,8 @@ func (mm matchModel) Update(msg tea.Msg) (tea.Model, tea.Cmd) {
 	switch mm.screen {
 	case "choice":
 		return mm.choice.Update(msg, mm)
+	case "wait":
+		return mm.wait.Update(msg, mm)
 	default:
 		return mm.update(msg)
 	}
@@ -59,7 +63,12 @@ func (mm matchModel) update(msg tea.Msg) (tea.Model, tea.Cmd) {
 		case "enter":
 			// 送信時に3分後にtimeoutMsgを通知する処理をgoroutineで動かす。
 			// 送信後、matchModelの状態をwaitとかにしてローディング画面でも表示しとく？
-			mm.sendOffer()
+			dest, _ := mm.list.SelectedItem().(Profile)
+			if dest.ID == "" {
+				return mm, nil
+			}
+			mm.sendMatchingMessage(dest, common.OFFER)
+			mm.screen = "wait"
 			return mm, nil
 		case "q":
 			mm.conn.Close()
@@ -75,6 +84,8 @@ func (mm matchModel) View() string {
 	switch mm.screen {
 	case "choice":
 		return mm.choice.View()
+	case "wait":
+		return mm.wait.View()
 	default:
 		return "\n" + mm.list.View()
 	}
@@ -103,18 +114,16 @@ func (mm matchModel) screenChangeHandler(msg screenChangeMsg) (tea.Model, tea.Cm
 func (mm matchModel) matchingMsgHandler(msg MatchingMsg) (tea.Model, tea.Cmd) {
 	switch msg.Data {
 	case common.OFFER:
+		mm.choice.dest = Profile(*msg.Source)
 		mm.screen = "choice"
 		return mm, screenChange("match")
-	case common.CANCEL_OFFER:
-	case common.ACCEPT:
-	case common.DENY:
-	case common.ERROR:
 	case common.JOIN:
-		mm.appendProfile(msg.Source)
+		mm.appendProfile(Profile(*msg.Source))
 		return mm, nil
 	case common.LEAVE:
-		mm.removeProfile(msg.Source)
+		mm.removeProfile(Profile(*msg.Source))
 		return mm, nil
+	case common.ERROR:
 	}
 	return mm, nil
 }
@@ -205,16 +214,13 @@ func (mm matchModel) readPump() {
 	}
 }
 
-func (mm matchModel) sendOffer() {
-	dest, _ := mm.list.SelectedItem().(Profile)
-	if dest.ID == "" {
-		return
-	}
-	src := Profile(*shellgame.GetMyProfile())
+func (mm matchModel) sendMatchingMessage(_dest Profile, data common.MatchingMessageData) {
+	dest := common.Profile(_dest)
+	src := shellgame.GetMyProfile()
 	msg := &MatchingMsg{
 		Source: src,
-		Dest:   dest,
-		Data:   common.OFFER,
+		Dest:   &dest,
+		Data:   data,
 	}
 	mm.matchingChan <- msg
 }

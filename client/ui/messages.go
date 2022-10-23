@@ -1,6 +1,7 @@
 package ui
 
 import (
+	"github.com/taise-hub/shellgame-cli/common"
 	tea "github.com/charmbracelet/bubbletea"
 )
 
@@ -17,8 +18,4 @@ func screenChange(from screenChangeMsg) tea.Cmd {
 	}
 }
 
-type MatchingMsg struct {
-	Source Profile `json:"source"`
-	Dest   Profile `json:"dest"`
-	Data   uint8   `json:"data"`
-}
+type MatchingMsg common.MatchingMessage 
