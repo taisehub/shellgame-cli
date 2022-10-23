@@ -54,7 +54,27 @@ func (mm matchModel) update(msg tea.Msg) (tea.Model, tea.Cmd) {
 		return mm.matchingMsgHandler(msg)
 	// case timeoutMsg: // 対戦要求に一定時間返答がない場合に受け取るメッセージ
 	case tea.KeyMsg:
-		return mm.keyMsgHandler(msg)
+		switch keypress := msg.String(); keypress {
+		case "ctrl+c":
+			return mm, tea.Quit
+		case "enter":
+			dest, _ := mm.list.SelectedItem().(Profile)
+			if dest.ID == "" {
+				return mm, nil
+			}
+			msg := &MatchingMsg{
+				Source: dest,
+				Dest:   dest,
+				Data:   common.OFFER,
+			}
+			mm.matchingChan <- msg
+			// 送信時に3分後にtimeoutMsgを通知する処理をgoroutineで動かす。
+			// 送信後、matchModelの状態をwaitとかにしてローディング画面でも表示しとく？
+			return mm, nil
+		case "q":
+			mm.conn.Close()
+			return mm.parent, screenChange("match")
+		}
 	}
 	var cmd tea.Cmd
 	mm.list, cmd = mm.list.Update(msg)
@@ -144,31 +164,6 @@ func (mm matchModel) matchingMsgHandler(msg MatchingMsg) (tea.Model, tea.Cmd) {
 			}
 		}
 		return mm, nil
-	}
-	return mm, nil
-}
-
-func (mm matchModel) keyMsgHandler(msg tea.KeyMsg) (tea.Model, tea.Cmd) {
-	switch keypress := msg.String(); keypress {
-	case "ctrl+c":
-		return mm, tea.Quit
-	case "enter":
-		dest, _ := mm.list.SelectedItem().(Profile)
-		if dest.ID == "" {
-			return mm, nil
-		}
-		msg := &MatchingMsg{
-			Source: dest,
-			Dest:   dest,
-			Data:   common.OFFER,
-		}
-		mm.matchingChan <- msg
-		// 送信時に3分後にtimeoutMsgを通知する処理をgoroutineで動かす。
-		// 送信後、matchModelの状態をwaitとかにしてローディング画面でも表示しとく？
-		return mm, nil
-	case "q":
-		mm.conn.Close()
-		return mm.parent, screenChange("match")
 	}
 	return mm, nil
 }
