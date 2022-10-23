@@ -7,18 +7,14 @@ import (
 	shellgame "github.com/taise-hub/shellgame-cli/client"
 	"github.com/taise-hub/shellgame-cli/common"
 	"log"
-	"sync"
 	"time"
 )
-
-var muRead sync.Mutex
-var muWrite sync.Mutex
 
 type matchModel struct {
 	list         list.Model
 	parent       *topModel
 	screen       screen
-	choice		 choiceModel
+	choice       choiceModel
 	conn         *websocket.Conn
 	matchingChan chan *MatchingMsg
 }
@@ -58,28 +54,7 @@ func (mm matchModel) update(msg tea.Msg) (tea.Model, tea.Cmd) {
 		return mm.matchingMsgHandler(msg)
 	// case timeoutMsg: // 対戦要求に一定時間返答がない場合に受け取るメッセージ
 	case tea.KeyMsg:
-		switch keypress := msg.String(); keypress {
-		case "ctrl+c":
-			return mm, tea.Quit
-		case "enter":
-			dest, _ := mm.list.SelectedItem().(Profile)
-			if dest.ID == "" {
-				return mm, nil
-			}
-			msg := &MatchingMsg{
-				Source: dest,
-				Dest: dest,
-				Data: common.OFFER,
-			}
-			mm.matchingChan <- msg
-			// mm.screen = "choice"
-			// 送信時に3分後にtimeoutMsgを通知する処理をgoroutineで動かす。
-			// 送信後、matchModelの状態をwaitとかにしてローディング画面でも表示しとく？
-			return mm, nil
-		case "q":
-			mm.conn.Close()
-			return mm.parent, screenChange("match")
-		}
+		return mm.keyMsgHandler(msg)
 	}
 	var cmd tea.Cmd
 	mm.list, cmd = mm.list.Update(msg)
@@ -87,17 +62,12 @@ func (mm matchModel) update(msg tea.Msg) (tea.Model, tea.Cmd) {
 }
 
 func (mm matchModel) View() string {
-	switch mm.screen  {
+	switch mm.screen {
 	case "choice":
 		return mm.choice.View()
 	default:
 		return "\n" + mm.list.View()
 	}
-}
-
-func (mm matchModel) matching() {
-	go mm.readPump()
-	mm.writePump()
 }
 
 func (mm matchModel) screenChangeHandler(msg screenChangeMsg) (tea.Model, tea.Cmd) {
@@ -123,7 +93,6 @@ func (mm matchModel) screenChangeHandler(msg screenChangeMsg) (tea.Model, tea.Cm
 			log.Fatalf("%v\n", err.Error())
 		}
 		mm.conn = conn
-		mm.conn.SetPongHandler(func(string) error { mm.conn.SetReadDeadline(time.Now().Add(60 * time.Second)); return nil })
 		go mm.matching()
 		return mm, nil
 	case "choice": // 対戦要求などの回答画面からの遷移。現在対戦待ちのPlayerを更新する。
@@ -161,7 +130,7 @@ func (mm matchModel) matchingMsgHandler(msg MatchingMsg) (tea.Model, tea.Cmd) {
 			if v.(Profile).ID == msg.Source.ID {
 				return mm, nil
 			}
-			i ++
+			i++
 		}
 		mm.list.InsertItem(i, msg.Source)
 		return mm, nil
@@ -171,12 +140,42 @@ func (mm matchModel) matchingMsgHandler(msg MatchingMsg) (tea.Model, tea.Cmd) {
 				return mm, nil
 			}
 			if v.(Profile).ID == msg.Source.ID {
-				 mm.list.RemoveItem(i)
+				mm.list.RemoveItem(i)
 			}
 		}
 		return mm, nil
 	}
 	return mm, nil
+}
+
+func (mm matchModel) keyMsgHandler(msg tea.KeyMsg) (tea.Model, tea.Cmd) {
+	switch keypress := msg.String(); keypress {
+	case "ctrl+c":
+		return mm, tea.Quit
+	case "enter":
+		dest, _ := mm.list.SelectedItem().(Profile)
+		if dest.ID == "" {
+			return mm, nil
+		}
+		msg := &MatchingMsg{
+			Source: dest,
+			Dest:   dest,
+			Data:   common.OFFER,
+		}
+		mm.matchingChan <- msg
+		// 送信時に3分後にtimeoutMsgを通知する処理をgoroutineで動かす。
+		// 送信後、matchModelの状態をwaitとかにしてローディング画面でも表示しとく？
+		return mm, nil
+	case "q":
+		mm.conn.Close()
+		return mm.parent, screenChange("match")
+	}
+	return mm, nil
+}
+
+func (mm matchModel) matching() {
+	go mm.readPump()
+	mm.writePump()
 }
 
 // mm.Update()から受け取ったメッセージをwebsocketに流す。
@@ -189,7 +188,7 @@ func (mm matchModel) writePump() {
 			if !ok {
 				return
 			}
-			if err := mm.WriteConn(m); err != nil {
+			if err := shellgame.WriteConn(mm.conn, m); err != nil {
 				return
 			}
 		case <-ticker.C:
@@ -204,25 +203,11 @@ func (mm matchModel) writePump() {
 func (mm matchModel) readPump() {
 	defer mm.conn.Close()
 	p := GetProgram()
-	mm.conn.SetReadDeadline(time.Now().Add(60 * time.Second))
 	for {
 		msg := &MatchingMsg{}
-		if err := mm.ReadConn(msg); err != nil {
+		if err := shellgame.ReadConn(mm.conn, msg); err != nil {
 			return
 		}
 		p.Send(*msg)
 	}
-}
-
-func (mm matchModel) WriteConn(msg any) error {
-	defer muWrite.Unlock()
-	muWrite.Lock()
-	mm.conn.SetWriteDeadline(time.Now().Add(10 * time.Second))
-	return mm.conn.WriteJSON(msg)
-}
-
-func (mm matchModel) ReadConn(msg *MatchingMsg) error {
-	defer muRead.Unlock()
-	muRead.Lock()
-	return mm.conn.ReadJSON(msg)
 }
