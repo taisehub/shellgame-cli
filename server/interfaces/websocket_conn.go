@@ -8,7 +8,7 @@ import (
 )
 
 const (
-	writeWait      = 10 * time.Second
+	writeWait      = 20 * time.Second
 	readWait       = 60 * time.Second
 	maxMessageSize = 512
 )

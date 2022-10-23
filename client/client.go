@@ -31,7 +31,6 @@ var (
 func WriteConn(conn *websocket.Conn, msg common.Message) error {
 	defer muWrite.Unlock()
 	muWrite.Lock()
-	conn.SetWriteDeadline(time.Now().Add(10 * time.Second))
 	return conn.WriteJSON(msg)
 }
 
@@ -76,6 +75,12 @@ func ConnectMatchingRoom() (*websocket.Conn, error) {
 	if err != nil {
 		return nil, err
 	}
+	wsconn.SetReadDeadline(time.Now().Add(60 * time.Second))
+	wsconn.SetPongHandler(func(string) error {
+		wsconn.SetReadDeadline(time.Now().Add(60 * time.Second))
+		wsconn.SetWriteDeadline(time.Now().Add(20 * time.Second))
+		return nil
+	})
 	return wsconn, nil
 }
 
