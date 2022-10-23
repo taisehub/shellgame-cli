@@ -15,6 +15,8 @@ const (
 
 type WebsocketConn struct {
 	*websocket.Conn
+	muRead           sync.Mutex
+	muWrite          sync.Mutex
 }
 
 func NewWebsocketConn(conn *websocket.Conn) *WebsocketConn {
@@ -29,7 +31,7 @@ func NewWebsocketConn(conn *websocket.Conn) *WebsocketConn {
 		}
 		return nil
 	})
-	return &WebsocketConn{conn}
+	return &WebsocketConn{conn, sync.Mutex{}, sync.Mutex{}}
 }
 
 // コネクションをcloseする前にCloseを通知するメッセージを送信することにする。
@@ -43,15 +45,13 @@ func (wc *WebsocketConn) Close() error {
 }
 
 func (wc *WebsocketConn) Read(msg common.Message) error {
-	mu := sync.Mutex{}
-	defer mu.Unlock()
-	mu.Lock()
+	defer wc.muRead.Unlock()
+	wc.muRead.Lock()
 	return wc.ReadJSON(msg)
 }
 
 func (wc *WebsocketConn) Write(msg common.Message) error {
-	mu := sync.Mutex{}
-	defer mu.Unlock()
-	mu.Lock()
+	defer wc.muWrite.Unlock()
+	wc.muWrite.Lock()
 	return wc.WriteJSON(msg)
 }
