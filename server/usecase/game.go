@@ -14,7 +14,7 @@ import (
 
 type GameUsecase interface {
 	Start(net.Conn) error
-	GetMatchingProfiles() []*common.Profile
+	ExtractMatchingProfiles(exceptID string) []*common.Profile
 	WaitMatch(*model.MatchingPlayer)
 }
 
@@ -44,11 +44,14 @@ func (gi *gameInteractor) Start(nconn net.Conn) (err error) {
 	return
 }
 
-func (gi *gameInteractor) GetMatchingProfiles() []*common.Profile {
+func (gi *gameInteractor) ExtractMatchingProfiles(exceptID string) []*common.Profile {
 	mroom := model.GetMatchingRoom()
 	players := mroom.GetMatchingPlayers()
 	var profiles []*common.Profile
 	for _, v := range players {
+		if v.Profile.ID == exceptID {
+			continue
+		}
 		profiles = append(profiles, v.Profile)
 	}
 	return profiles

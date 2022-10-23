@@ -95,7 +95,15 @@ func (con *GameController) Match(w http.ResponseWriter, req *http.Request) {
 
 // MatchingPlayerのProfileを返すようにしたい。
 func (con *GameController) getMatchingProfiles(w http.ResponseWriter, req *http.Request) {
-	players := con.usecase.GetMatchingProfiles()
+	sess, _ := store.Get(req, SESS_NAME)
+	if sess.Values["id"] == nil {
+		w.Header().Set("Content-Type", "text/plain; charset=utf-8")
+		w.Header().Set("X-Content-Type-Options", "nosniff")
+		w.WriteHeader(400)
+		fmt.Fprintln(w, "400 bad reuqest")
+		return
+	}
+	players := con.usecase.ExtractMatchingProfiles(sess.Values["id"].(string))
 	RespondJSON(w, players, 200)
 }
 
@@ -106,6 +114,13 @@ func (con *GameController) WaitMatch(w http.ResponseWriter, req *http.Request) {
 		return
 	}
 	sess, _ := store.Get(req, SESS_NAME)
+	if sess.Values["id"] == nil || sess.Values["name"] == nil {
+		w.Header().Set("Content-Type", "text/plain; charset=utf-8")
+		w.Header().Set("X-Content-Type-Options", "nosniff")
+		w.WriteHeader(400)
+		fmt.Fprintln(w, "400 bad reuqest")
+		return
+	}
 	wc := NewWebsocketConn(conn)
 	player := model.NewMatchingPlayer(sess.Values["id"].(string), sess.Values["name"].(string), wc)
 	con.usecase.WaitMatch(player)
