@@ -19,9 +19,12 @@ func (wm matchWaitModel) Update(msg tea.Msg, mm matchModel) (tea.Model, tea.Cmd)
 	case MatchingMsg:
 		switch msg.Data {
 		case common.ACCEPT:
+			// battleModelに移行したい
 			panic("recieve accept")
 		case common.DENY:
-			panic("recieve deny")
+			// TODO: キャンセルされたことを通達する画面を挟みたい。
+			mm.screen = ""
+			return mm, screenChange("waits")
 		case common.ERROR:
 			panic("対戦中なのでエラーです")
 		}
