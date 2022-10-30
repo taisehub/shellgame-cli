@@ -45,6 +45,7 @@ func (bm battleModel) Update(msg tea.Msg) (tea.Model, tea.Cmd) {
 			return bm, tea.Quit
 		}
 	case shellFinishedMsg:
+		bm.isShell = false
 		if msg.err != nil {
 			bm.err = msg.err
 			return bm, tea.Quit
