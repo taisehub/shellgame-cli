@@ -19,41 +19,48 @@ func ExecShell() tea.Cmd {
 }
 
 type battleModel struct {
+	isShell bool
 	err error
 }
 
 func NewBattleModel() battleModel {
-	return battleModel{}
+	return battleModel{isShell: false}
 }
 
-func (bm battleModel) Update(msg tea.Msg, tm topModel) (tea.Model, tea.Cmd) {
+func (bm battleModel) Init() tea.Cmd {
+	return nil
+}
+
+func (bm battleModel) Update(msg tea.Msg) (tea.Model, tea.Cmd) {
 	switch msg := msg.(type) {
 	case screenChangeMsg:
 		// 問題と自分と対戦相手のスコアを取ってくる。
-		return tm, nil
+		return bm, nil
 	case tea.KeyMsg:
 		switch msg.String() {
 		case "enter":
-			return tm, ExecShell()
+			bm.isShell = true
+			return bm, ExecShell()
 		case "ctrl+c":
-			return tm, tea.Quit
-		case "q":
-			tm.screen = ""
-			return tm, screenChange("root")
+			return bm, tea.Quit
 		}
 	case shellFinishedMsg:
 		if msg.err != nil {
 			bm.err = msg.err
-			return tm, tea.Quit
+			return bm, tea.Quit
 		}
 	}
-	return tm, nil
+	return bm, nil
 }
 
-func (m battleModel) View() string {
-	if m.err != nil {
-		log.Fatalf("Error:" + m.err.Error() + "\n")
+func (bm battleModel) View() string {
+	if bm.err != nil {
+		log.Fatalf("Error:" + bm.err.Error() + "\n")
 		return "ERROR\n"
 	}
-	return "aaa"
+
+	if bm.isShell {
+		return ""
+	}
+	return "対戦画面\n\nIMPLEMENT ME\n\n(enterでコンテナに接続します)"
 }

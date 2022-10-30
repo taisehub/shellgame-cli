@@ -20,7 +20,8 @@ func (wm matchWaitModel) Update(msg tea.Msg, mm matchModel) (tea.Model, tea.Cmd)
 		switch msg.Data {
 		case common.ACCEPT:
 			// battleModelに移行したい
-			panic("recieve accept")
+			mm.conn.Close()
+			return mm.battle, screenChange("wait")
 		case common.DENY:
 			// TODO: キャンセルされたことを通達する画面を挟みたい。
 			mm.screen = ""

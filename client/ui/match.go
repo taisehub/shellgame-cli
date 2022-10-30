@@ -11,12 +11,14 @@ import (
 
 type matchModel struct {
 	list         list.Model
-	parent       *topModel
 	screen       screen
-	received       matchReceivedModel
-	waits         matchWaitModel
 	conn         *websocket.Conn
 	matchingChan chan *MatchingMsg
+
+	parent       *topModel
+	battle		 battleModel
+	received     matchReceivedModel
+	waits        matchWaitModel
 }
 
 func NewMatchModel() (matchModel, error) {
@@ -30,8 +32,9 @@ func NewMatchModel() (matchModel, error) {
 
 	rm := NewMatchRequestModel()
 	wm := NewMatchWaitModel()
+	bm := NewBattleModel()
 
-	return matchModel{list: l, screen: "", received: rm, waits: wm, matchingChan: mc}, nil
+	return matchModel{list: l, screen: "", received: rm, waits: wm, battle: bm, matchingChan: mc}, nil
 }
 
 func (mm matchModel) Init() tea.Cmd {
