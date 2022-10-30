@@ -3,9 +3,11 @@ package model
 import (
 	"github.com/taise-hub/shellgame-cli/common"
 	"log"
+	"sync"
 )
 
 var (
+	mu sync.Mutex
 	matchingRoom *MatchingRoom = &MatchingRoom{
 		Players:    make(map[string]*MatchingPlayer),
 		message:    make(chan *common.MatchingMessage),
@@ -111,14 +113,19 @@ func (mr *MatchingRoom) HandleOffer(msg *common.MatchingMessage) {
 		return
 	}
 
-	if mr.Players[msg.Source.ID].GetStatus() == NEGOTIATING || mr.Players[msg.Dest.ID].GetStatus() == NEGOTIATING {
-		err := &common.MatchingMessage{Data: common.ERROR}
-		mr.Players[msg.Source.ID].matchingChan <- err
-		return
-	}
+	func() {
+		mu.Lock()
+		defer mu.Unlock()
 
-	mr.Players[msg.Source.ID].SetStatus(NEGOTIATING)
-	mr.Players[msg.Dest.ID].SetStatus(NEGOTIATING)
+		if mr.Players[msg.Source.ID].GetStatus() == NEGOTIATING || mr.Players[msg.Dest.ID].GetStatus() == NEGOTIATING {
+			err := &common.MatchingMessage{Data: common.ERROR}
+			mr.Players[msg.Source.ID].matchingChan <- err
+			return
+		}
+
+		mr.Players[msg.Source.ID].SetStatus(NEGOTIATING)
+		mr.Players[msg.Dest.ID].SetStatus(NEGOTIATING)
+	}()
 }
 
 // 申請キャンセルのハンドリング
@@ -132,14 +139,19 @@ func (mr *MatchingRoom) HandleCancelOffer(msg *common.MatchingMessage) {
 	}
 
 	// FIXME: 交渉中でないPlayerを宛先にしてMessageを送信することで交渉解除することが可能。
-	if mr.Players[msg.Source.ID].GetStatus() == WAITING || mr.Players[msg.Dest.ID].GetStatus() == WAITING {
-		err := &common.MatchingMessage{Data: common.ERROR}
-		mr.Players[msg.Source.ID].matchingChan <- err
-		return
-	}
+	func() {
+		mu.Lock()
+		defer mu.Unlock()
 
-	mr.Players[msg.Source.ID].SetStatus(WAITING)
-	mr.Players[msg.Dest.ID].SetStatus(WAITING)
+		if mr.Players[msg.Source.ID].GetStatus() == WAITING || mr.Players[msg.Dest.ID].GetStatus() == WAITING {
+			err := &common.MatchingMessage{Data: common.ERROR}
+			mr.Players[msg.Source.ID].matchingChan <- err
+			return
+		}
+
+		mr.Players[msg.Source.ID].SetStatus(WAITING)
+		mr.Players[msg.Dest.ID].SetStatus(WAITING)
+	}()
 }
 
 // 申請に対する承諾のハンドリング
@@ -152,11 +164,15 @@ func (mr *MatchingRoom) HandleAccept(msg *common.MatchingMessage) {
 		return
 	}
 
-	if mr.Players[msg.Source.ID].GetStatus() == WAITING || mr.Players[msg.Dest.ID].GetStatus() == WAITING {
-		err := &common.MatchingMessage{Data: common.ERROR}
-		mr.Players[msg.Source.ID].matchingChan <- err
-		return
-	}
+	func() {
+		mu.Lock()
+		defer mu.Unlock()
+		if mr.Players[msg.Source.ID].GetStatus() == WAITING || mr.Players[msg.Dest.ID].GetStatus() == WAITING {
+			err := &common.MatchingMessage{Data: common.ERROR}
+			mr.Players[msg.Source.ID].matchingChan <- err
+			return
+		}
+	}()
 }
 
 // 申請に対する不承諾のハンドリング
@@ -170,13 +186,19 @@ func (mr *MatchingRoom) HandleDeny(msg *common.MatchingMessage) {
 		return
 	}
 
-	// FIXME: 交渉中でないPlayerを宛先にしてMessageを送信することで交渉解除することが可能。
-	if mr.Players[msg.Source.ID].GetStatus() == WAITING || mr.Players[msg.Dest.ID].GetStatus() == WAITING {
-		err := &common.MatchingMessage{Data: common.ERROR}
-		mr.Players[msg.Source.ID].matchingChan <- err
-		return
-	}
 
-	mr.Players[msg.Source.ID].SetStatus(WAITING)
-	mr.Players[msg.Dest.ID].SetStatus(WAITING)
+	func() {
+		mu.Lock()
+		defer mu.Unlock()
+
+		// FIXME: 交渉中でないPlayerを宛先にしてMessageを送信することで交渉解除することが可能。
+		if mr.Players[msg.Source.ID].GetStatus() == WAITING || mr.Players[msg.Dest.ID].GetStatus() == WAITING {
+			err := &common.MatchingMessage{Data: common.ERROR}
+			mr.Players[msg.Source.ID].matchingChan <- err
+			return
+		}
+
+		mr.Players[msg.Source.ID].SetStatus(WAITING)
+		mr.Players[msg.Dest.ID].SetStatus(WAITING)
+	}()
 }
