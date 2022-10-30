@@ -13,8 +13,8 @@ type matchModel struct {
 	list         list.Model
 	parent       *topModel
 	screen       screen
-	choice       choiceModel
-	wait         waitModel
+	received       matchReceivedModel
+	waits         matchWaitModel
 	conn         *websocket.Conn
 	matchingChan chan *MatchingMsg
 }
@@ -28,10 +28,10 @@ func NewMatchModel() (matchModel, error) {
 	l.SetShowHelp(false)
 	mc := make(chan *MatchingMsg)
 
-	choice := NewChoiceModel()
-	wait := NewWaitModel()
+	rm := NewMatchRequestModel()
+	wm := NewMatchWaitModel()
 
-	return matchModel{list: l, screen: "", choice: choice, wait: wait, matchingChan: mc}, nil
+	return matchModel{list: l, screen: "", received: rm, waits: wm, matchingChan: mc}, nil
 }
 
 func (mm matchModel) Init() tea.Cmd {
@@ -40,10 +40,10 @@ func (mm matchModel) Init() tea.Cmd {
 
 func (mm matchModel) Update(msg tea.Msg) (tea.Model, tea.Cmd) {
 	switch mm.screen {
-	case "choice":
-		return mm.choice.Update(msg, mm)
-	case "wait":
-		return mm.wait.Update(msg, mm)
+	case "received":
+		return mm.received.Update(msg, mm)
+	case "waits":
+		return mm.waits.Update(msg, mm)
 	default:
 		return mm.update(msg)
 	}
@@ -68,7 +68,7 @@ func (mm matchModel) update(msg tea.Msg) (tea.Model, tea.Cmd) {
 				return mm, nil
 			}
 			mm.sendMatchingMessage(dest, common.OFFER)
-			mm.screen = "wait"
+			mm.screen = "waits"
 			return mm, nil
 		case "q":
 			mm.conn.Close()
@@ -82,10 +82,10 @@ func (mm matchModel) update(msg tea.Msg) (tea.Model, tea.Cmd) {
 
 func (mm matchModel) View() string {
 	switch mm.screen {
-	case "choice":
-		return mm.choice.View()
-	case "wait":
-		return mm.wait.View()
+	case "received":
+		return mm.received.View()
+	case "waits":
+		return mm.waits.View()
 	default:
 		return "\n" + mm.list.View()
 	}
@@ -102,7 +102,7 @@ func (mm matchModel) screenChangeHandler(msg screenChangeMsg) (tea.Model, tea.Cm
 		}
 		go mm.matching()
 		return mm, nil
-	case "choice": // 対戦要求などの回答画面からの遷移。現在対戦待ちのPlayerを更新する。
+	case "received": // 対戦要求の回答画面からの遷移。現在対戦待ちのPlayerを更新する。
 		if err := mm.updateProfiles(); err != nil {
 			return matchModel{}, tea.Quit
 		}
@@ -114,8 +114,8 @@ func (mm matchModel) screenChangeHandler(msg screenChangeMsg) (tea.Model, tea.Cm
 func (mm matchModel) matchingMsgHandler(msg MatchingMsg) (tea.Model, tea.Cmd) {
 	switch msg.Data {
 	case common.OFFER:
-		mm.choice.dest = Profile(*msg.Source)
-		mm.screen = "choice"
+		mm.received.dest = Profile(*msg.Source)
+		mm.screen = "received"
 		return mm, screenChange("match")
 	case common.JOIN:
 		mm.appendProfile(Profile(*msg.Source))
