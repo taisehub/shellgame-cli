@@ -39,8 +39,9 @@ func (gi *gameInteractor) Start(nconn net.Conn) (err error) {
 		return err
 	}
 	defer cconn.Close()
-	go func() { _, _ = io.Copy(nconn, cconn) }()
-	io.Copy(cconn, nconn)
+
+	go func() { io.Copy(cconn, nconn) }()
+	io.Copy(nconn, cconn)
 	return
 }
 
