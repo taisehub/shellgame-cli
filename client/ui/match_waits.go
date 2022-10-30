@@ -22,6 +22,8 @@ func (wm matchWaitModel) Update(msg tea.Msg, mm matchModel) (tea.Model, tea.Cmd)
 			panic("recieve accept")
 		case common.DENY:
 			panic("recieve deny")
+		case common.ERROR:
+			panic("対戦中なのでエラーです")
 		}
 	case tea.KeyMsg:
 		switch msg.String() {

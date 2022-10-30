@@ -69,7 +69,7 @@ func (mm matchModel) update(msg tea.Msg) (tea.Model, tea.Cmd) {
 			}
 			mm.sendMatchingMessage(dest, common.OFFER)
 			mm.screen = "waits"
-			return mm, nil
+			return mm, screenChange("match")
 		case "q":
 			mm.conn.Close()
 			return mm.parent, screenChange("match")
@@ -102,7 +102,7 @@ func (mm matchModel) screenChangeHandler(msg screenChangeMsg) (tea.Model, tea.Cm
 		}
 		go mm.matching()
 		return mm, nil
-	case "received": // 対戦要求の回答画面からの遷移。現在対戦待ちのPlayerを更新する。
+	case "received" , "waits": // 対戦要求の回答画面からの遷移。現在対戦待ちのPlayerを更新する。
 		if err := mm.updateProfiles(); err != nil {
 			return matchModel{}, tea.Quit
 		}
