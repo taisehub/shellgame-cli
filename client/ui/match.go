@@ -114,7 +114,7 @@ func (mm matchModel) screenChangeHandler(msg screenChangeMsg) (tea.Model, tea.Cm
 func (mm matchModel) matchingMsgHandler(msg MatchingMsg) (tea.Model, tea.Cmd) {
 	switch msg.Data {
 	case common.OFFER:
-		mm.received.dest = Profile(*msg.Source)
+		mm.received.from = Profile(*msg.Source)
 		mm.screen = "received"
 		return mm, screenChange("match")
 	case common.JOIN:
