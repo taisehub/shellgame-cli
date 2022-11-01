@@ -17,7 +17,7 @@ func main() {
 		return
 	}
 	consoleRepo := interfaces.NewContainerRepository(containerHandler)
-	matchService := service.NewMatchService()
+	matchService := service.NewMatchingService()
 	gameUsecase := usecase.NewGameInteractor(consoleRepo, matchService)
 	gameController := interfaces.NewGameController(gameUsecase)
 

@@ -14,10 +14,10 @@ import (
 
 type GameInteractor struct {
 	consoleRepo  repository.ConsoleRepository
-	matchService *service.MatchService
+	matchService *service.MatchingService
 }
 
-func NewGameInteractor(consoleRepo repository.ConsoleRepository, matchService *service.MatchService) *GameInteractor {
+func NewGameInteractor(consoleRepo repository.ConsoleRepository, matchService *service.MatchingService) *GameInteractor {
 	return &GameInteractor{
 		consoleRepo:  consoleRepo,
 		matchService: matchService,
