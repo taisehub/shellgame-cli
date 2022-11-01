@@ -24,10 +24,10 @@ var (
 )
 
 type GameController struct {
-	usecase usecase.GameUsecase
+	usecase *usecase.GameInteractor
 }
 
-func NewGameController(usecase usecase.GameUsecase) *GameController {
+func NewGameController(usecase *usecase.GameInteractor) *GameController {
 	return &GameController{
 		usecase: usecase,
 	}
@@ -70,7 +70,6 @@ func (con *GameController) saveProfile(w http.ResponseWriter, req *http.Request)
 	id := json["id"].(string)
 	name := json["name"].(string)
 	if name == "" {
-		w.Header().Set("Content-Type", "text/plain; charset=utf-8")
 		w.Header().Set("X-Content-Type-Options", "nosniff")
 		w.WriteHeader(400)
 		fmt.Fprintln(w, "400 bad reuqest")
