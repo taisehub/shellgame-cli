@@ -12,19 +12,13 @@ import (
 	"time"
 )
 
-type GameUsecase interface {
-	Start(net.Conn) error
-	ExtractMatchingProfiles(exceptID string) []*common.Profile
-	WaitMatch(*model.MatchingPlayer)
-}
-
-type gameInteractor struct {
+type GameInteractor struct {
 	consoleRepo  repository.ConsoleRepository
-	matchService *service.MatchService
+	matchService *service.MatchingService
 }
 
-func NewGameInteractor(consoleRepo repository.ConsoleRepository, matchService *service.MatchService) GameUsecase {
-	return &gameInteractor{
+func NewGameInteractor(consoleRepo repository.ConsoleRepository, matchService *service.MatchingService) *GameInteractor {
+	return &GameInteractor{
 		consoleRepo:  consoleRepo,
 		matchService: matchService,
 	}
@@ -32,7 +26,7 @@ func NewGameInteractor(consoleRepo repository.ConsoleRepository, matchService *s
 
 // ゲーム開始時に利用する。
 // クラアインとから受け取ったコネクションをコンソールの入出力先である別のコネクションに接続する。
-func (gi *gameInteractor) Start(nconn net.Conn) (err error) {
+func (gi *GameInteractor) Start(nconn net.Conn) (err error) {
 	cconn, err := gi.consoleRepo.StartShell()
 	if err != nil {
 		log.Printf("Error in StartShell(): %v\n", err)
@@ -45,7 +39,7 @@ func (gi *gameInteractor) Start(nconn net.Conn) (err error) {
 	return
 }
 
-func (gi *gameInteractor) ExtractMatchingProfiles(exceptID string) []*common.Profile {
+func (gi *GameInteractor) ExtractMatchingProfiles(exceptID string) []*common.Profile {
 	mroom := model.GetMatchingRoom()
 	players := mroom.GetMatchingPlayers()
 	var profiles []*common.Profile
@@ -59,7 +53,7 @@ func (gi *gameInteractor) ExtractMatchingProfiles(exceptID string) []*common.Pro
 }
 
 // playerをマッチング待ち状態にする。
-func (gi *gameInteractor) WaitMatch(player *model.MatchingPlayer) {
+func (gi *GameInteractor) WaitMatch(player *model.MatchingPlayer) {
 	mroom := model.GetMatchingRoom()
 	mroom.GetRegisterChan() <- player
 	go player.ReadPump()

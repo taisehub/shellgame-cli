@@ -5,7 +5,6 @@ import (
 	"github.com/taise-hub/shellgame-cli/server/domain/service"
 	"github.com/taise-hub/shellgame-cli/server/infrastructure"
 	"github.com/taise-hub/shellgame-cli/server/interfaces"
-	"github.com/taise-hub/shellgame-cli/server/interfaces/redis"
 	"github.com/taise-hub/shellgame-cli/server/usecase"
 	"log"
 	"net/http"
@@ -18,9 +17,7 @@ func main() {
 		return
 	}
 	consoleRepo := interfaces.NewContainerRepository(containerHandler)
-	redisHandler := infrastructure.NewRedisHandler()
-	matchingRoomRepo := redis.NewMatchingRoomRepository(redisHandler)
-	matchService := service.NewMatchService(matchingRoomRepo)
+	matchService := service.NewMatchingService()
 	gameUsecase := usecase.NewGameInteractor(consoleRepo, matchService)
 	gameController := interfaces.NewGameController(gameUsecase)
 

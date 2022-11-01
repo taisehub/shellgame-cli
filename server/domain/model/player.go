@@ -59,6 +59,9 @@ func (p *MatchingPlayer) ReadPump() {
 		if err := p.conn.Read(msg); err != nil {
 			return
 		}
+		if msg.Dest == nil || msg.Source == nil {
+			return
+		}
 		GetMatchingRoom().message <- msg
 	}
 }

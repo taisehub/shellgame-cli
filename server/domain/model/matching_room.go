@@ -1,6 +1,7 @@
 package model
 
 import (
+	"fmt"
 	"github.com/taise-hub/shellgame-cli/common"
 	"log"
 	"sync"
@@ -59,13 +60,9 @@ func (mr *MatchingRoom) Run() {
 				// 参加は全員に送信する
 				p.matchingChan <- msg
 			}
-			mr.Players[player.GetID()] = player
+			mr.enterRoom(player)
 		case player := <-mr.unregister:
-			log.Printf("[+] %s exited the room.\n", player.GetName())
-			if _, ok := mr.Players[player.GetID()]; ok {
-				close(player.matchingChan)
-				delete(mr.Players, player.GetID())
-			}
+			mr.exitRoom(player)
 			for _, p := range mr.Players {
 				var msg = &common.MatchingMessage{
 					Source: player.GetProfile(),
@@ -102,8 +99,19 @@ func (mr *MatchingRoom) Run() {
 	}
 }
 
-// 申請のハンドリング
-// 申請者と承諾者のステータスが共にWAITINGであること確認し、両者のステータスをNEGOTIATINGにする。
+func (mr *MatchingRoom) enterRoom(p *MatchingPlayer) {
+	mr.Players[p.GetID()] = p
+}
+
+func (mr *MatchingRoom) exitRoom(p *MatchingPlayer) {
+	log.Printf("[+] %s exited the room.\n", p.GetName())
+	if _, ok := mr.Players[p.GetID()]; ok {
+		close(p.matchingChan)
+		delete(mr.Players, p.GetID())
+	}
+}
+
+// 対戦申請処理
 func (mr *MatchingRoom) HandleOffer(msg *common.MatchingMessage) {
 	// 受信者がRoomにいることを確認
 	_, ok := mr.Players[msg.Dest.ID]
@@ -112,24 +120,10 @@ func (mr *MatchingRoom) HandleOffer(msg *common.MatchingMessage) {
 		mr.Players[msg.Source.ID].matchingChan <- err
 		return
 	}
-
-	func() {
-		mu.Lock()
-		defer mu.Unlock()
-
-		if mr.Players[msg.Source.ID].GetStatus() == NEGOTIATING || mr.Players[msg.Dest.ID].GetStatus() == NEGOTIATING {
-			err := &common.MatchingMessage{Data: common.ERROR}
-			mr.Players[msg.Source.ID].matchingChan <- err
-			return
-		}
-
-		mr.Players[msg.Source.ID].SetStatus(NEGOTIATING)
-		mr.Players[msg.Dest.ID].SetStatus(NEGOTIATING)
-	}()
+	mr.changeToNegotiating(msg.Source, msg.Dest)
 }
 
-// 申請キャンセルのハンドリング
-// 申請者と承諾者のステータスが共にNEGITIATINGであること確認し、両者のステータスをWAITINGにする。
+// 対戦申請キャンセル処理
 func (mr *MatchingRoom) HandleCancelOffer(msg *common.MatchingMessage) {
 	_, ok := mr.Players[msg.Dest.ID]
 	if !ok {
@@ -138,24 +132,10 @@ func (mr *MatchingRoom) HandleCancelOffer(msg *common.MatchingMessage) {
 		return
 	}
 
-	// FIXME: 交渉中でないPlayerを宛先にしてMessageを送信することで交渉解除することが可能。
-	func() {
-		mu.Lock()
-		defer mu.Unlock()
-
-		if mr.Players[msg.Source.ID].GetStatus() == WAITING || mr.Players[msg.Dest.ID].GetStatus() == WAITING {
-			err := &common.MatchingMessage{Data: common.ERROR}
-			mr.Players[msg.Source.ID].matchingChan <- err
-			return
-		}
-
-		mr.Players[msg.Source.ID].SetStatus(WAITING)
-		mr.Players[msg.Dest.ID].SetStatus(WAITING)
-	}()
+	mr.changeToWaiting(msg.Source, msg.Dest)
 }
 
-// 申請に対する承諾のハンドリング
-// 申請者と承諾者のステータスが共にNEGITIATINGであること確認する。
+// 対戦申請に対する承諾処理
 func (mr *MatchingRoom) HandleAccept(msg *common.MatchingMessage) {
 	_, ok := mr.Players[msg.Dest.ID]
 	if !ok {
@@ -164,21 +144,25 @@ func (mr *MatchingRoom) HandleAccept(msg *common.MatchingMessage) {
 		return
 	}
 
-	func() {
+	isNego := func(src, dst *common.Profile) error {
 		mu.Lock()
 		defer mu.Unlock()
-		if mr.Players[msg.Source.ID].GetStatus() == WAITING || mr.Players[msg.Dest.ID].GetStatus() == WAITING {
-			err := &common.MatchingMessage{Data: common.ERROR}
-			mr.Players[msg.Source.ID].matchingChan <- err
-			return
+		if mr.Players[src.ID].GetStatus() == WAITING {
+			return fmt.Errorf("souce player is not NEGOTIATING")
+		} else if mr.Players[dst.ID].GetStatus() == WAITING {
+			return fmt.Errorf("destination player is not NEGOTIATING")
 		}
-	}()
+		return nil
+	}
+
+	if err := isNego(msg.Source, msg.Dest); err != nil {
+		err := &common.MatchingMessage{Data: common.ERROR}
+		mr.Players[msg.Source.ID].matchingChan <- err
+	}
 }
 
-// 申請に対する不承諾のハンドリング
-// 申請者と承諾者のステータスが共にNEGITIATINGであること確認する。
+// 対戦申請に対する不承諾処理
 func (mr *MatchingRoom) HandleDeny(msg *common.MatchingMessage) {
-	//  以下の条件を満たす場合、申請者に対してマッチングが成立しなかったことを通達し、申請者と承認者のMatchingStateをWAITINGにする。
 	_, ok := mr.Players[msg.Dest.ID]
 	if !ok {
 		err := &common.MatchingMessage{Data: common.ERROR}
@@ -186,19 +170,50 @@ func (mr *MatchingRoom) HandleDeny(msg *common.MatchingMessage) {
 		return
 	}
 
+	mr.changeToWaiting(msg.Source, msg.Dest)
+}
 
-	func() {
-		mu.Lock()
-		defer mu.Unlock()
+// 申請者(src)と承諾者(dst)のステータスが共にWAITINGであること確認し、両者のステータスをNEGOTIATINGにする。
+func (mr *MatchingRoom) changeToNegotiating(src, dst *common.Profile) error {
+	if mr.Players[src.ID] == nil {
+		return fmt.Errorf("source player is not in the room.")
+	} else if mr.Players[dst.ID] == nil {
+		return fmt.Errorf("destination player is not in the room.")
+	}
 
-		// FIXME: 交渉中でないPlayerを宛先にしてMessageを送信することで交渉解除することが可能。
-		if mr.Players[msg.Source.ID].GetStatus() == WAITING || mr.Players[msg.Dest.ID].GetStatus() == WAITING {
-			err := &common.MatchingMessage{Data: common.ERROR}
-			mr.Players[msg.Source.ID].matchingChan <- err
-			return
-		}
+	mu.Lock()
+	defer mu.Unlock()
 
-		mr.Players[msg.Source.ID].SetStatus(WAITING)
-		mr.Players[msg.Dest.ID].SetStatus(WAITING)
-	}()
+	if mr.Players[src.ID].GetStatus() == NEGOTIATING {
+		return fmt.Errorf("souce player has already been NEGOTIATING")
+	} else if mr.Players[dst.ID].GetStatus() == NEGOTIATING {
+		return fmt.Errorf("destination player has alredy been NEGOTIATING")
+	}
+
+	mr.Players[src.ID].SetStatus(NEGOTIATING)
+	mr.Players[dst.ID].SetStatus(NEGOTIATING)
+	return nil
+}
+
+// 申請者(src)と承諾者(dst)のステータスが共にNEGITIATINGであること確認し、両者のステータスをWAITINGにする。
+func (mr *MatchingRoom) changeToWaiting(src, dst *common.Profile) error {
+	if mr.Players[src.ID] == nil {
+		return fmt.Errorf("source player is not in the room.")
+	} else if mr.Players[dst.ID] == nil {
+		return fmt.Errorf("destination player is not in the room.")
+	}
+
+	mu.Lock()
+	defer mu.Unlock()
+
+	// FIXME: 交渉中でないPlayerを宛先にしてMessageを送信することで交渉解除することが可能。
+	if mr.Players[src.ID].GetStatus() == WAITING {
+		return fmt.Errorf("souce player has already been WAITING")
+	} else if mr.Players[dst.ID].GetStatus() == WAITING {
+		return fmt.Errorf("destination player has already been WAITING")
+	}
+
+	mr.Players[src.ID].SetStatus(WAITING)
+	mr.Players[dst.ID].SetStatus(WAITING)
+	return nil
 }
