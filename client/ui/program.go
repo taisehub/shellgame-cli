@@ -15,7 +15,7 @@ func GetProgram() *tea.Program {
 		lock.Lock()
 		defer lock.Unlock()
 		if p == nil { // 確実にlock.Lock()が行われることを保証する
-			m := NewModel()
+			m := NewInitModel()
 			p = tea.NewProgram(m, tea.WithAltScreen())
 		}
 	}
