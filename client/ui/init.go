@@ -52,8 +52,6 @@ func (im initModel) Update(msg tea.Msg) (tea.Model, tea.Cmd) {
 
 func (im initModel) View() string {
 	return fmt.Sprintf(
-		"What’s your name?\n\n%s\n\n%s",
-		im.textInput.View(),
-		"(esc to quit)",
-	) + "\n"
+		"プレイヤー名を入力してください。\n\n%s",
+		im.textInput.View()) + "\n"
 }
