@@ -2,7 +2,6 @@ package main
 
 import (
 	"github.com/taise-hub/shellgame-cli/server/domain/model"
-	"github.com/taise-hub/shellgame-cli/server/domain/service"
 	"github.com/taise-hub/shellgame-cli/server/infrastructure"
 	"github.com/taise-hub/shellgame-cli/server/interfaces"
 	"github.com/taise-hub/shellgame-cli/server/usecase"
@@ -17,8 +16,7 @@ func main() {
 		return
 	}
 	consoleRepo := interfaces.NewContainerRepository(containerHandler)
-	matchService := service.NewMatchingService()
-	gameUsecase := usecase.NewGameInteractor(consoleRepo, matchService)
+	gameUsecase := usecase.NewGameInteractor(consoleRepo)
 	gameController := interfaces.NewGameController(gameUsecase)
 
 	go model.GetMatchingRoom().Run()
