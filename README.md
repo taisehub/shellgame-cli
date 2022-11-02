@@ -3,8 +3,11 @@
 プレイヤーごとに独立したシェルゲーコンテナを用意しており、WebSocketを用いてシェルゲーコンテナに接続します。
 
 ## 🚧DEMO🚧
-![デモ](./static/demo.mov)
- 
+
+
+https://user-images.githubusercontent.com/59153204/199500110-e39afc88-5510-4039-96a8-1e212ebe18f7.mp4
+
+
 ## 🚧Usage🚧
 シェルゲーサーバを立てる
 ```
