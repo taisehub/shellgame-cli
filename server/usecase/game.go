@@ -5,7 +5,6 @@ import (
 	"github.com/taise-hub/shellgame-cli/common"
 	"github.com/taise-hub/shellgame-cli/server/domain/model"
 	"github.com/taise-hub/shellgame-cli/server/domain/repository"
-	"github.com/taise-hub/shellgame-cli/server/domain/service"
 	"io"
 	"log"
 	"net"
@@ -14,13 +13,11 @@ import (
 
 type GameInteractor struct {
 	consoleRepo  repository.ConsoleRepository
-	matchService *service.MatchingService
 }
 
-func NewGameInteractor(consoleRepo repository.ConsoleRepository, matchService *service.MatchingService) *GameInteractor {
+func NewGameInteractor(consoleRepo repository.ConsoleRepository) *GameInteractor {
 	return &GameInteractor{
 		consoleRepo:  consoleRepo,
-		matchService: matchService,
 	}
 }
 
